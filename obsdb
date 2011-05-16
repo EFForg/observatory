@@ -1,0 +1,16 @@
+#!/bin/sh
+
+# Comment or delete these two lines, 
+echo you need to customise the obsdb script for your system
+exit 1
+
+# And...
+
+# Either edit ~/.my.cnf as described in the README, and the uncomment this
+# line:
+
+# mysql $*
+
+# Or customise and uncomment this line:
+
+# mysql -u <username> -p<password> <databasename> $*

@@ -4,7 +4,7 @@
 
 # run this to build a comprehensive and consistent version of everything after
 # transvalidity has been computed; 
-# note this script requires a callable scripted named "ssldb" to be in the path 
+# note this script requires a callable scripted named "obsdb" to be in the path 
 # which launches the DB, logs the user in and uses the schema for the observatory
 
 set -x

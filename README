@@ -1,9 +1,10 @@
 The SSL Observatory is still a work in progress.
 
 WARNING: This code is not suitable for production systems, it is experimental.
-For example, low righs users can interfere with the scripts this thing uses, and
-database use is done without privilege seperation, tmp file access is willy nilly 
-and we frequently run with privileges we don't need... so be careful.
+For example, low rights users can interfere with the scripts this thing uses,
+and database use is done without privilege seperation, tmp file access is
+willy nilly and we frequently run with privileges we don't need... so be
+careful.
 
 This is the complicated codebase of scripts that we used to collect and
 process the EFF SSL Observatory dataset.  The most important top-level scripts
@@ -23,7 +24,7 @@ launch_parsers -- edit this to set the path where your .results files reside,
 
 transvalid.py  -- once you have a valid_certs table, run this to compute a more
                   sophisticated notion of which certs are valid in real
-                  browsers; this updates the raw* tables
+                  browsers; this updates the raw certs* tables
 
 rebuild.sh     -- run this to build all the important tables in the neatest
                   and most correct way, once transvalidity has been evaluated

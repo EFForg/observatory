@@ -174,6 +174,7 @@ def toOpensslText(in_name):
       output_texts.append(text)
   except:
     print "Error attempting to process ", in_name, len(pem_certs)
+    raise TypeError, "Not a parseable X509 cert"
   return [pem_certs, output_texts, fingerprints]
 
 def dumpByDir(start = '.'):
@@ -182,7 +183,10 @@ def dumpByDir(start = '.'):
     for fn in files:
       if fn.endswith('.results'):
         path = os.path.join(root, fn)
-        pem_certs, output_texts, fingerprints = toOpensslText(path)
+        try:
+          pem_certs, output_texts, fingerprints = toOpensslText(path)
+        except TypeError:                  # not an X509 cert
+          continue
         timestamp = os.path.getmtime(path)
         moz_verifications = verifyCertChain(pem_certs,MOZ_VERIFY_ARGS,timestamp)
         ms_verifications = verifyCertChain(pem_certs,MS_VERIFY_ARGS,timestamp)

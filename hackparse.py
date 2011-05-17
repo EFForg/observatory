@@ -10,6 +10,22 @@ import os,os.path
 #import pdb # debug support
 import re
 
+# A hack parser for the output of 
+# openssl x509 -text -in <file>
+# Intended to allow us to try building some sample database tables...
+
+USAGE = """
+python hackparse.py [--table NAME] [--readable] [--create] <dirs>
+
+Args: 
+\t--table    output data to the table called NAME
+\t--readable do no parsing; instead, make the "readable" table of
+\t           prettyprinted certificates
+\t--create   drops the table if it exists and creates it anew
+\t<dirs>     a list of directories to scan for .results files
+\t           (if none specified defaults to *.x.x.x)
+"""
+
 try:
   import psyco # if available
   psyco.profile()
@@ -20,29 +36,11 @@ except:
 DEFAULT_TABLE = "certs"
 
 # other constants 
-
-USAGE = """
-python hackparse.py [--table NAME] [--readable] [--create] <dirs>
-
-Args: 
-\t--table    uses provided table NAME for data
-\t--readable do no parsing; instead, make the "readable" table of
-\t           prettyprinted certificates
-\t--create   drops the table if it exists and creates it a new
-\t           a list of directories (if none specified defaults to *.x.x.x)
-\t<dirs>     directories to scan for .results files
-"""
-
 parse_roots = False
 make_readable_table = False
 allhex = ":" + string.hexdigits
 tablename = DEFAULT_TABLE
 allfields = []
-
-# A hack parser for the output of 
-# openssl x509 -text -in <file>
-# Intended to allow us to try building some sample database tables...
-
 
 neg = "(Negative)"
 def hexline(line):
@@ -58,7 +56,7 @@ def makelinestruct(line):
   l = line.replace("\t","        ")
   stripped = l.lstrip()
   indent = len(l) - len(stripped)
-  return (indent, line, stripped)
+  return (indent, line)
 
 def bottom_indent(lines, lineno):
   # Returns:
@@ -103,7 +101,7 @@ def probably_splittable(line):
 
 def hacky_parse(cstring):
   "cstring -- a string produced by openssl x509 -text"
-  #print "cs:", cstring
+  # This function is more effective than it is beautiful
   lines = [makelinestruct(l) for l in cstring.split("\n")]
   prev_indent = -1 
   results = {}
@@ -114,7 +112,11 @@ def hacky_parse(cstring):
   last_result_struct = []    # The last plausible result struct, in case we need
                              # to backtrack.
   unknown = False              # About to encounter an unknown x509v3 field
-  for n,(i,line,lstripped) in enumerate(lines):
+  for n,(i,line) in enumerate(lines):
+    # n -- what line we're on
+    # i -- how many characters this line was indented by
+    # line -- string of the entire line
+
     l = line.strip()
     if not l:
       # don't get confused by blank lines
@@ -139,14 +141,11 @@ def hacky_parse(cstring):
         chop = struct_indents.index(i)
       except:
         raise
-      #print "before chop", chop, struct
       last_result_struct = struct
       struct = struct[:chop]
       struct_indents = struct_indents[:chop]
-      #print "after chop", struct
 
     if bottom >= 0:
-      #print "+"
       if not hexline(l):
         ps = probably_splittable(l)
         if ps and not unknown:
@@ -155,7 +154,6 @@ def hacky_parse(cstring):
           value = l[delim+1:]
         else:
           value = l
-          #assert bottom !=0, "beaten by\n" + l
           if bottom == 0:
             # This is not supposed to happen, but it does in some weird cases
             # that require special treatment.
@@ -184,7 +182,6 @@ def hacky_parse(cstring):
       else:            # hexline
         value += l
         if bottom > 0:
-          #print "bottom adding", struct
           process_results(results, struct, value)
           value = ""
 
@@ -192,7 +189,6 @@ def hacky_parse(cstring):
       enstruct(struct,struct_indents,l,i)
       if unknown_extension(line):
         unknown = True
-      #print "struct now", struct
 
     prev_indent = i
 
@@ -412,6 +408,8 @@ def rewrite(field, value):
       return newfield, prepend + value, extra
   return field, value, None
 
+# examples of openssl prettyprinting output for study and testing purposes
+
 eg = """Certificate:
     Data:
         Version: 1 (0x0)
@@ -517,13 +515,19 @@ Certificate:
         4b:fd:49:2d
 """
 
-def add_cert_to_db(path, validities, x509_parsed_certchain, fprints):
-  for i, parsed_cert in enumerate(x509_parsed_certchain):
+def add_cert_to_db(path, validities, pprinted_certchain, fprints):
+  # validities         -- output of openssl verify on each cert in this chain
+  # pprinted_certchain -- output of openssl x509 -text   on each crt in chain
+  assert len(validities) == len(pprinted_certchain), (validities, pprinted_certchain)
+  assert len(pprinted_certchain) == len(fprints)
+
+  for i, pprinted_cert in enumerate(pprinted_certchain):
     print "parsing", path
     try:
-      fields = hacky_parse(parsed_cert)
+      # start a dictionary of database fields/columns...
+      fields = hacky_parse(pprinted_cert)
     except:
-      print "Error parsing", path + "\n" + parsed_cert
+      print "Error parsing", path + "\n" + pprinted_cert
       raise
     fields['path'] = path
     moz_valid, ms_valid = validities[i]
@@ -580,7 +584,8 @@ def db_from_results(dirs):
 
   print "Exiting correctly..."
  
-def make_indicies(tablename):
+def make_indicies():
+  global tablename
   # Make some indicies
   to_index = ["valid"]
   # use hashes to index these:

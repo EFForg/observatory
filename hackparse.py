@@ -12,18 +12,30 @@ import re
 
 # A hack parser for the output of 
 # openssl x509 -text -in <file>
-# Intended to allow us to try building some sample database tables...
 
 USAGE = """
 python hackparse.py [--table NAME] [--readable] [--create] <dirs>
 
 Args: 
 \t--table    output data to the table called NAME
+
 \t--readable do no parsing; instead, make the "readable" table of
 \t           prettyprinted certificates
+
 \t--create   drops the table if it exists and creates it anew
+
 \t<dirs>     a list of directories to scan for .results files
 \t           (if none specified defaults to *.x.x.x)
+
+\t--roots    instead of walking <dirs>, append the trusted root certificates 
+             to the table
+
+
+Recursively reads certificates from the server responses in the input
+directories, and appends them to the named MySQL table (or the "certs"
+table by default).  Use --create to make the table for the first time or
+delete its existing contents.
+
 """
 
 try:
@@ -639,10 +651,6 @@ def mk_readable(dirs):
       # (but watch out because of the batched nature of the insertion)
       q = 'INSERT IGNORE INTO readable VALUES ' + ",".join(q)
       gdbc.execute(q)
-
- 
-
-  
 
 
 def create_table():

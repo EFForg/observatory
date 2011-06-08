@@ -32,23 +32,60 @@ def fetch_crl(uri):
     print "ERROR reading CRL:"
     print stderr
     sys.exit(1)
+  details = {"uri" : uri}
+  ready_for_reason = False
+  #Example: 
+  #    Serial Number: 42858298
+  #      Revocation Date: Jun 29 14:50:12 2005 GMT
+  #      CRL entry extensions:
+  #          X509v3 CRL Reason Code: 
+  #              Superseded
+
   for line in stdout.split("\n"):
     l = line.strip()
     if l.startswith("Serial Number: "):
-      sn = l.partition("Serial Number: ")[2]
-      q = "INSERT INTO revoked VALUE ('%s', '%s')" % \
-                                       (db.escape_string(uri), db.escape_string(sn))
-      print q
-      dbc.execute(q)
+      if details:
+        insert_revocation_row(details)
+        details = {"uri" : uri}
+      details["sn"] = l.partition("Serial Number: ")[2]
+    elif l.startswith("Revocation Date: "):
+      details["date"] = l.partition("Revocation Date: ")[2]
+    elif l.startswith("X509v3 CRL Reason Code:"):
+      ready_for_reason=True
+    elif ready_for_reason:
+      details["reason"]=l
+      ready_for_reason = False
+    else:
+      print "Unknown:", l
+      
+  if details:
+    insert_revocation_row(details)
+
+def insert_revocation_row(d):
+
+  uri = "'%s'" % db.escape_string(d["uri"])
+  sn = "'%s'" % db.escape_string(d["sn"])
+  ts = "STR_TO_DATE('"+db.escape_string(d["date"])+"','%b %d %H:%i:%s %Y')" 
+  if "reason" in d :
+    reason = "'%s'" % db.escape_string(d["reason"])
+  else:
+    reason = "NULL"
+    
+  q = "INSERT INTO revoked VALUE (%s, %s, %s, %s)" % (uri, sn, ts, reason)
+                                       
+  print q
+  dbc.execute(q)
+  
 
 def mk_revoked_table():
   q = "DROP TABLE IF EXISTS revoked"
   print q
   dbc.execute(q)
-  q = "CREATE TABLE revoked (uri text, `Serial Number` varchar(100))"
+  q = "CREATE TABLE revoked (uri text, `Serial Number` varchar(100), when datetime, reason text)"
   print q
   dbc.execute(q)
   q = "CREATE INDEX sn ON revoked(`Serial Number`)"
+  q = "CREATE INDEX r ON revoked(`Reason`)"
   print q
   dbc.execute(q)
 

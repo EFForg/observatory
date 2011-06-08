@@ -44,7 +44,7 @@ def fetch_crl(uri):
   for line in stdout.split("\n"):
     l = line.strip()
     if l.startswith("Serial Number: "):
-      if details:
+      if "sn" in details:
         insert_revocation_row(details)
         details = {"uri" : uri}
       details["sn"] = l.partition("Serial Number: ")[2]
@@ -58,14 +58,18 @@ def fetch_crl(uri):
     else:
       print "Unknown:", l
       
-  if details:
+  if "sn" in details:
     insert_revocation_row(details)
 
 def insert_revocation_row(d):
 
   uri = "'%s'" % db.escape_string(d["uri"])
   sn = "'%s'" % db.escape_string(d["sn"])
-  ts = "STR_TO_DATE('"+db.escape_string(d["date"])+"','%b %d %H:%i:%s %Y')" 
+  ds = d["date"].split()
+  tss = db.escape_string(" ".join(ds[:-1]))   # date & time
+  tzs = "'%s'" % db.escape_string(ds[-1])    # timezone
+
+  ts = "CONVERT_TZ(STR_TO_DATE('"+tss+"','%b %d %H:%i:%s %Y'),"+tzs+",'GMT')"
   if "reason" in d :
     reason = "'%s'" % db.escape_string(d["reason"])
   else:
@@ -81,7 +85,7 @@ def mk_revoked_table():
   q = "DROP TABLE IF EXISTS revoked"
   print q
   dbc.execute(q)
-  q = "CREATE TABLE revoked (uri text, `Serial Number` varchar(100), when datetime, reason text)"
+  q = "CREATE TABLE revoked (uri text, `Serial Number` varchar(100), `when revoked` datetime, reason varchar(256))"
   print q
   dbc.execute(q)
   q = "CREATE INDEX sn ON revoked(`Serial Number`)"

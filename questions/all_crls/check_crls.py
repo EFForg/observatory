@@ -69,7 +69,9 @@ def insert_revocation_row(d):
   tss = db.escape_string(" ".join(ds[:-1]))   # date & time
   tzs = "'%s'" % db.escape_string(ds[-1])    # timezone
 
-  ts = "CONVERT_TZ(STR_TO_DATE('"+tss+"','%b %d %H:%i:%s %Y'),"+tzs+",'GMT')"
+  ts = "STR_TO_DATE('"+tss+"','%b %d %H:%i:%s %Y')"
+  if tzs != "GMT":
+    ts = "CONVERT_TZ(%s, %s, 'GMT')" % (ts, tzs)
   if "reason" in d :
     reason = "'%s'" % db.escape_string(d["reason"])
   else:

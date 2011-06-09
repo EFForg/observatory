@@ -39,7 +39,7 @@ curve_desc = """
     newcurve
     marktype none
     linetype solid
-    color  %d %d %d """
+    color  %.2f %.2f %.2f """
 cindex = 0
 curve_desc2 = """
     label : %s
@@ -76,5 +76,7 @@ for (r,) in results:
       q = q % (year, month, year, month)
       print q
       dbc.execute(q)
-      n = int(dbc.fetchone()[0]
+      n = int(dbc.fetchone()[0])
       why_graph.write("%f %d\n" % (year + month / 12., n+1))  # n+1 for log axis
+
+print colours

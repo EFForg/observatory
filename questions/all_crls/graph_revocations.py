@@ -6,7 +6,9 @@ db, dbc=dbconnect()
 
 for year in range(1970,2012):
   for month in range(1,13):
-    q = "SELECT COUNT(*) FROM revoked WHERE `when revoked` >= `%d`-`$d`-01 and `when revoked` < `%d`-`%d`-31 23:59:59"
+    q = 'SELECT COUNT(*) FROM revoked WHERE `when revoked` >= "%d-%d-01" and `when revoked` < "%d-%d-31 23:59:59"'
     q = q % (year, month, year, month)
+    print q
     dbc.execute(q)
-    n = int(dbc.fetchone())
+    n = int(dbc.fetchone()[0])
+    print n

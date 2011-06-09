@@ -22,7 +22,7 @@ def fetch_crl(uri):
       result = urlopen(uri, timeout=60)
       f.write(result.read())
       f.close()
-    except IOError,e:
+    except Exception,e:
       print "ERROR FETCHING", uri
       print e
       return

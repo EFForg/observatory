@@ -6,6 +6,7 @@ db, dbc=dbconnect()
 
 HEADER_all = """newgraph
     xaxis size 5  label : Date
+    max 2012
     yaxis size 4 label : Number of revocations
     newcurve
     marktype none
@@ -44,7 +45,7 @@ for year in range(1970,2012):
     print q
     dbc.execute(q)
     n = int(dbc.fetchone()[0])
-    all_graph.write("%f %d" % (year + month / 12., n))
+    all_graph.write("%f %d\n" % (year + month / 12., n))
 
 q = "SELECT DISTINCT reason FROM revoked"
 dbc.execute(q)

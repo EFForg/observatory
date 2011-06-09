@@ -1,5 +1,6 @@
 newgraph
     xaxis size 5  label : Date
+    max 2012
     yaxis size 4 label : Number of revocations
     newcurve
     marktype none

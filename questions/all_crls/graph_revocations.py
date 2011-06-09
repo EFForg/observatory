@@ -49,14 +49,18 @@ for year in range(1970,2012):
 
 q = "SELECT DISTINCT reason FROM revoked"
 dbc.execute(q)
-for (r,) in q.fetchall():
-  why_graph.write(curve_desc % r)
+results = dbc.fetchall()
+print results
+for (r,) in results:
+  reason = r
+  if not r: reason="NULL"
+  why_graph.write(curve_desc % reason)
   for year in range(1970,2012):
     for month in range(1,13):
       q = 'SELECT COUNT(*) FROM revoked WHERE `when revoked` >= "%d-%d-01" and `when revoked` < "%d-%d-31 23:59:59" '
-      q += 'and reason="%s"' % db.escape_string(r)
+      q += 'and reason="%s"' % db.escape_string(reason)
       q = q % (year, month, year, month)
       print q
       dbc.execute(q)
       n = int(dbc.fetchone()[0])
-      all_graph.write("%f %d" % (year + month / 12., n))
+      why_graph.write("%f %d\n" % (year + month / 12., n))

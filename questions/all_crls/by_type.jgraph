@@ -1,7 +1,6 @@
 newgraph
     xaxis size 5  label : Date
-    min 1998
-    yaxis size 4 label : Number of revocations
+    yaxis size 4 label : Number of revocations / month
     log
 
     newcurve

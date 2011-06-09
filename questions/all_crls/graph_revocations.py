@@ -4,6 +4,13 @@ from dbconnect import dbconnect
 
 db, dbc=dbconnect()
 
+colours = [(r,g,b) for r in vs for g in v2 for b in vs]
+colours = colours[:-1] # no white
+yellow = colours.index( (1.0,0.6,0.0) )
+colours[yellow] = (0.7,0.1,0.1) # red is much better
+colours.extend([(0.3,0.3,0.3),(1.0,0.5,0.0)])
+
+
 HEADER_all = """newgraph
     xaxis size 5  label : Date
     max 2012
@@ -29,6 +36,10 @@ curve_desc = """
     newcurve
     marktype none
     linetype solid
+    color : %d %d %d
+"""
+cindex = 0
+curve_desc 2 = """
     label : %s
     pts
 """    
@@ -53,7 +64,8 @@ print results
 for (r,) in results:
   reason = r
   if not r: reason="NULL"
-  why_graph.write(curve_desc % reason)
+  why_graph.write(curve_desc % colours[cindex])
+  why_graph.write(curve_desc2 % reason)
   for year in range(1970,2012):
     for month in range(1,13):
       q = 'SELECT COUNT(*) FROM revoked WHERE `when revoked` >= "%d-%d-01" and `when revoked` < "%d-%d-31 23:59:59" '

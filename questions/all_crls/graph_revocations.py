@@ -17,6 +17,8 @@ HEADER_all = """newgraph
     xaxis size 5  label : Date
     max 2012
     yaxis size 4 label : Number of revocations
+    log
+    min 0
     newcurve
     marktype none
     color 1 0 0
@@ -74,5 +76,5 @@ for (r,) in results:
       q = q % (year, month, year, month)
       print q
       dbc.execute(q)
-      n = int(dbc.fetchone()[0])
-      why_graph.write("%f %d\n" % (year + month / 12., n))
+      n = int(dbc.fetchone()[0]
+      why_graph.write("%f %d\n" % (year + month / 12., n+1))  # n+1 for log axis

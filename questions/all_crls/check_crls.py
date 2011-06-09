@@ -2,7 +2,7 @@
 
 import MySQLdb,os.path, sys
 from subprocess import PIPE, Popen
-from urllib import urlretrieve
+from urllib2 import urlopen
 import sys
 sys.path.append("..")
 from dbconnect import dbconnect
@@ -18,12 +18,14 @@ def fetch_crl(uri):
   fn = uri.replace(os.path.sep,"-")
   if not os.path.isfile(fn):
     try:
-      filen, headers = urlretrieve(uri, fn)
+      f = open(fn, "w")
+      result = urlopen(uri, timeout=60)
+      f.write(result.read())
+      f.close()
     except IOError,e:
       print "ERROR FETCHING", uri
       print e
       return
-    assert fn == filen
 
   cmd = CMD + [fn]
   proc = Popen(cmd, stdout=PIPE, stdin=PIPE)

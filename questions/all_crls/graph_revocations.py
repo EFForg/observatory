@@ -4,6 +4,8 @@ from dbconnect import dbconnect
 
 db, dbc=dbconnect()
 
+vs = [0.0,1.0]
+v2 = [0.0,0.6]
 colours = [(r,g,b) for r in vs for g in v2 for b in vs]
 colours = colours[:-1] # no white
 yellow = colours.index( (1.0,0.6,0.0) )
@@ -29,17 +31,15 @@ all_graph.write(HEADER_all)
 HEADER_by_type = """newgraph
     xaxis size 5  label : Date
     yaxis size 4 label : Number of revocations
-
 """
 
 curve_desc = """
     newcurve
     marktype none
     linetype solid
-    color : %d %d %d
-"""
+    color  %d %d %d """
 cindex = 0
-curve_desc 2 = """
+curve_desc2 = """
     label : %s
     pts
 """    

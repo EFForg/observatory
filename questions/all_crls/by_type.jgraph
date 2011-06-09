@@ -2,10 +2,10 @@ newgraph
     xaxis size 5  label : Date
     yaxis size 4 label : Number of revocations
 
-
     newcurve
     marktype none
     linetype solid
+    color  0 0 0 
     label : NULL
     pts
 1970.083333 0
@@ -516,6 +516,7 @@ newgraph
     newcurve
     marktype none
     linetype solid
+    color  0 0 0 
     label : 9
     pts
 1970.083333 0
@@ -1026,6 +1027,7 @@ newgraph
     newcurve
     marktype none
     linetype solid
+    color  0 0 0 
     label : Affiliation Changed
     pts
 1970.083333 0
@@ -1536,6 +1538,7 @@ newgraph
     newcurve
     marktype none
     linetype solid
+    color  0 0 0 
     label : CA Compromise
     pts
 1970.083333 0
@@ -2046,6 +2049,7 @@ newgraph
     newcurve
     marktype none
     linetype solid
+    color  0 0 0 
     label : Certificate Hold
     pts
 1970.083333 0
@@ -2556,6 +2560,7 @@ newgraph
     newcurve
     marktype none
     linetype solid
+    color  0 0 0 
     label : Cessation Of Operation
     pts
 1970.083333 0
@@ -3066,6 +3071,7 @@ newgraph
     newcurve
     marktype none
     linetype solid
+    color  0 0 0 
     label : Key Compromise
     pts
 1970.083333 0
@@ -3576,6 +3582,7 @@ newgraph
     newcurve
     marktype none
     linetype solid
+    color  0 0 0 
     label : Superseded
     pts
 1970.083333 0
@@ -4086,6 +4093,7 @@ newgraph
     newcurve
     marktype none
     linetype solid
+    color  0 0 0 
     label : Unspecified
     pts
 1970.083333 9

@@ -65,6 +65,7 @@ for (r,) in results:
   reason = r
   if not r: reason="NULL"
   why_graph.write(curve_desc % colours[cindex])
+  cindex += 1
   why_graph.write(curve_desc2 % reason)
   for year in range(1970,2012):
     for month in range(1,13):

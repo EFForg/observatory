@@ -516,7 +516,7 @@ newgraph
     newcurve
     marktype none
     linetype solid
-    color  0 0 0 
+    color  0 0 1 
     label : 9
     pts
 1970.083333 0
@@ -1538,7 +1538,7 @@ newgraph
     newcurve
     marktype none
     linetype solid
-    color  0 0 0 
+    color  0 0 1 
     label : CA Compromise
     pts
 1970.083333 0
@@ -2049,7 +2049,7 @@ newgraph
     newcurve
     marktype none
     linetype solid
-    color  0 0 0 
+    color  1 0 0 
     label : Certificate Hold
     pts
 1970.083333 0
@@ -2560,7 +2560,7 @@ newgraph
     newcurve
     marktype none
     linetype solid
-    color  0 0 0 
+    color  1 0 1 
     label : Cessation Of Operation
     pts
 1970.083333 0
@@ -4093,7 +4093,7 @@ newgraph
     newcurve
     marktype none
     linetype solid
-    color  0 0 0 
+    color  1 0 0 
     label : Unspecified
     pts
 1970.083333 9

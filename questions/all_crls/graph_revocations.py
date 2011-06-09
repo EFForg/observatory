@@ -16,7 +16,7 @@ colours.extend([(0.3,0.3,0.3),(1.0,0.5,0.0)])
 HEADER_all = """newgraph
     xaxis size 5  label : Date
     max 2012
-    yaxis size 4 label : Number of revocations
+    yaxis size 4 label : Number of revocations / month
     log
     min 0
     newcurve
@@ -32,7 +32,8 @@ all_graph.write(HEADER_all)
 
 HEADER_by_type = """newgraph
     xaxis size 5  label : Date
-    yaxis size 4 label : Number of revocations
+    yaxis size 4 label : Number of revocations / month
+    log
 """
 
 curve_desc = """
@@ -50,7 +51,9 @@ why_graph = open("by_type.jgraph","w")
 why_graph.write(HEADER_by_type)
 
 
-for year in range(1970,2012):
+# there are a few whacko revocations at the epoch, but the first after that
+# was in 1998..
+for year in range(1998,2012):
   for month in range(1,13):
     q = 'SELECT COUNT(*) FROM revoked WHERE `when revoked` >= "%d-%d-01" and `when revoked` < "%d-%d-31 23:59:59"'
     q = q % (year, month, year, month)
@@ -72,7 +75,9 @@ for (r,) in results:
   for year in range(1970,2012):
     for month in range(1,13):
       q = 'SELECT COUNT(*) FROM revoked WHERE `when revoked` >= "%d-%d-01" and `when revoked` < "%d-%d-31 23:59:59" '
-      q += 'and reason="%s"' % db.escape_string(reason)
+      if reason == "NULL": rparam = "NULL"
+      else:                rparam = '"%s"' % db.escape_string(reason)
+      q += 'and reason=%s' % rparam
       q = q % (year, month, year, month)
       print q
       dbc.execute(q)

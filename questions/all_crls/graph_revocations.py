@@ -28,7 +28,6 @@ HEADER_by_type = """newgraph
 curve_desc = """
     newcurve
     marktype none
-    color 1 0 0
     linetype solid
     label : %s
     pts

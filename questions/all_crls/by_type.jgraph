@@ -5,7 +5,6 @@ newgraph
 
     newcurve
     marktype none
-    color 1 0 0
     linetype solid
     label : NULL
     pts
@@ -516,7 +515,6 @@ newgraph
 
     newcurve
     marktype none
-    color 1 0 0
     linetype solid
     label : 9
     pts
@@ -1027,7 +1025,6 @@ newgraph
 
     newcurve
     marktype none
-    color 1 0 0
     linetype solid
     label : Affiliation Changed
     pts
@@ -1538,7 +1535,6 @@ newgraph
 
     newcurve
     marktype none
-    color 1 0 0
     linetype solid
     label : CA Compromise
     pts
@@ -2049,7 +2045,6 @@ newgraph
 
     newcurve
     marktype none
-    color 1 0 0
     linetype solid
     label : Certificate Hold
     pts
@@ -2560,7 +2555,6 @@ newgraph
 
     newcurve
     marktype none
-    color 1 0 0
     linetype solid
     label : Cessation Of Operation
     pts
@@ -3071,7 +3065,6 @@ newgraph
 
     newcurve
     marktype none
-    color 1 0 0
     linetype solid
     label : Key Compromise
     pts
@@ -3582,7 +3575,6 @@ newgraph
 
     newcurve
     marktype none
-    color 1 0 0
     linetype solid
     label : Superseded
     pts
@@ -4093,7 +4085,6 @@ newgraph
 
     newcurve
     marktype none
-    color 1 0 0
     linetype solid
     label : Unspecified
     pts

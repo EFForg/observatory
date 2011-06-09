@@ -75,9 +75,8 @@ for (r,) in results:
   for year in range(1998,2012):
     for month in range(1,13):
       q = 'SELECT COUNT(*) FROM revoked WHERE `when revoked` >= "%d-%d-01" and `when revoked` < "%d-%d-31 23:59:59" '
-      if reason == "NULL": rparam = "NULL"
-      else:                rparam = '"%s"' % db.escape_string(reason)
-      q += 'and reason=%s' % rparam
+      if reason == "NULL": q += 'AND reason IS NULL'
+      else:                q += 'AND reason="%s"' % db.escape_string(reason)
       q = q % (year, month, year, month)
       print q
       dbc.execute(q)

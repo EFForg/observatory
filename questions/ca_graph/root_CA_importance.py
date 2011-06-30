@@ -6,10 +6,7 @@ import MySQLdb
 import re
 import children_graph
 from SubordinateTracking import findSignedSubordinates, countSignedLeaves
-from disclosure.disclosure import extract_ca_name
 from math import log
-
-
 sys.path.append("..")
 from dbconnect import dbconnect
 db,dbc = dbconnect()
@@ -28,6 +25,22 @@ node_id = 0
 all_nodes = {}
 names_to_cas = {}
 
+
+def extract_ca_name(subject):
+  "Attempt to extract the name of a CA from its subject (issuer) field"
+  x = re.search("O=([^=]+), [A-Z][A-Z]?=", subject)
+  if x: 
+    name = x.group(1)
+  else: 
+    x = re.search("CN=([^=]+)", subject)
+    if x:
+      name = x.group(1)
+    else:
+      name = subject.replace('"',"'")
+  if name.endswith(","):
+    name = name[:-1]
+  return name.replace("\n"," ")
+
 class CA:
   def __init__(self, subject, skid, moz_v, ms_v, trans_v=None, 
                        root=None, issuer=None, akid=None):
@@ -44,7 +57,7 @@ class CA:
 
     child_CAs_details = findSignedSubordinates(subject, skid, recurse=False)
     self.child_CAs= [CA(csubj,cskid,moz_v,ms_v,root=self.root) 
-                                    for _id,csubj,ciss,cskid in child_CAs_details]
+                              for _id,csubj,ciss,cskid in child_CAs_details]
     self.child_leaves = countSignedLeaves(subject, skid)
     self.n_ancestors =  len(self.child_CAs) \
                       + sum([c.n_ancestors for c in self.child_CAs])

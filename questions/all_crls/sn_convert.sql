@@ -2,7 +2,7 @@
 -- it in an sn column
 -- alter table valid_certs add column sn varchar(32)
 
-update table valid_certs
+update valid_certs
 set sn=upper(
          replace(
            substring_index(
@@ -13,9 +13,9 @@ set sn=upper(
            ":",
            ""
          )
-       ) as sn ;
+       ) ;
 
-update table all_certs
+update all_certs
 set sn=upper(
          replace(
            substring_index(
@@ -26,4 +26,4 @@ set sn=upper(
            ":",
            ""
          )
-       ) as sn ;
+       ) ;

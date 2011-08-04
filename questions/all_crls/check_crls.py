@@ -30,8 +30,8 @@ def fetch_crl(uri):
   cmd = CMD + [fn]
   proc = Popen(cmd, stdout=PIPE, stdin=PIPE)
   stdout, stderr = proc.communicate()
-  if stderr:
-    print "ERROR reading CRL:"
+  if stderr or proc.returncode != 0:
+    print "ERROR reading CRL from %s:" % fn
     print stderr
     sys.exit(1)
   details = {"uri" : uri}

@@ -1,8 +1,7 @@
 newgraph
     xaxis size 5  label : Date
-    yaxis size 4 label : Number of revocations / month
+    yaxis size 6 label : Number of revocations / month
     log
-
     newcurve
     marktype none
     linetype solid

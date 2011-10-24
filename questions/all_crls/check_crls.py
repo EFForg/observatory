@@ -6,7 +6,6 @@ from urllib2 import urlopen
 import sys
 sys.path.append("..")
 from dbconnect import dbconnect
-import traceback
 db,dbc = dbconnect()
 
 CMD = ["openssl", "crl", "-noout", "-text", "-inform", "der", "-in"]
@@ -31,8 +30,8 @@ def fetch_crl(uri):
   cmd = CMD + [fn]
   proc = Popen(cmd, stdout=PIPE, stdin=PIPE)
   stdout, stderr = proc.communicate()
-  if stderr or proc.returncode != 0:
-    print "ERROR reading CRL from %s:" % fn
+  if stderr:
+    print "ERROR reading CRL:"
     print stderr
     sys.exit(1)
   details = {"uri" : uri}
@@ -108,21 +107,15 @@ def main():
   results = dbc.fetchall()
   fetched = {}
   for (crl,) in results:
-    try:
-      print crl
-      if crl:
-        for word in crl.split():
-          if word.startswith("URI==="):
-            uri = word.partition("URI===")[2]
-            print "uri", uri
-            if uri not in fetched:
-              fetch_crl(uri)
-              fetched[uri] = True
-    except:
-      traceback.print_exc()
-      if not "--no-crash" in sys.argv:
-        raise 
-
+    print crl
+    if crl:
+      for word in crl.split():
+        if word.startswith("URI==="):
+          uri = word.partition("URI===")[2]
+          print "uri", uri
+          if uri not in fetched:
+            fetch_crl(uri)
+            fetched[uri] = True
 
 if __name__ == "__main__":
   main()

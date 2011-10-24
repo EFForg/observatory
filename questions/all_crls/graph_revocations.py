@@ -17,7 +17,7 @@ HEADER_all = """newgraph
     xaxis size 5  label : Date
     max 2012
     yaxis size 4 label : Number of revocations / month
-    log
+    (* log *)
     min 0
     newcurve
     marktype none
@@ -33,7 +33,7 @@ all_graph.write(HEADER_all)
 HEADER_by_type = """newgraph
     xaxis size 5  label : Date
     yaxis size 4 label : Number of revocations / month
-    log
+    (* log *)
 """
 
 curve_desc = """
@@ -50,10 +50,13 @@ curve_desc2 = """
 why_graph = open("by_type.jgraph","w")
 why_graph.write(HEADER_by_type)
 
+ca_graph = open("ca_compromise.jgraph", "w")
+ca_graph.write(HEADER_all)
+
 
 # there are a few whacko revocations at the epoch, but the first after that
 # was in 1998..
-for year in range(1998,2012):
+for year in range(1998,2011):
   for month in range(1,13):
     q = 'SELECT COUNT(*) FROM revoked WHERE `when revoked` >= "%d-%d-01" and `when revoked` < "%d-%d-31 23:59:59"'
     q = q % (year, month, year, month)
@@ -82,5 +85,8 @@ for (r,) in results:
       dbc.execute(q)
       n = int(dbc.fetchone()[0])
       why_graph.write("%f %d\n" % (year + month / 12., n+1))  # n+1 for log axis
+      if reason=="CA Compromise":
+        ca_graph.write("%f %d\n" % (year + month / 12., n))
+      if year==2011 and month==9: break
 
 print colours

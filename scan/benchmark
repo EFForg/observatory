@@ -1,0 +1,9 @@
+#!/bin/bash
+
+N=$1
+
+while [ $N != 0 ] ; do
+  echo launching scan $N
+  N=`expr $N - 1`
+  (time nmap -iR 16384 -p 443 -sS -PN -T4 --min-hostgroup 8192 --max-rtt-timeout 500 > /dev/null) &
+done

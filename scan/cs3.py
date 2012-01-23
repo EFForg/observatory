@@ -6,9 +6,7 @@ import os, time, random, os.path, sys
 from dbconnect import dbconnect
 db,dbc = dbconnect()
 
-# defines the actual ranges we use, i.e. octet 1 starts at 214 ends at 97
-# octet 4 starts at 19, ends at 37
-myRand = random.Random(time.time())
+#myRand = random.Random(time.time())
 
 from xml.parsers.expat import ParserCreate
 parser = ParserCreate()

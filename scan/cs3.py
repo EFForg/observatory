@@ -159,7 +159,7 @@ eth0:0    Link encap:Ethernet  HWaddr 00:25:90:39:16:4c
           UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
           Interrupt:16 Memory:fb5e0000-fb600000 
   """
-  lines = os.system("ifconfig eth0:0").readlines()
+  lines = os.popen("ifconfig eth0:0").readlines()
   for line in lines:
     if "inet addr" in line:
       entry = line.split()[1]  # 

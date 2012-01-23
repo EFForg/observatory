@@ -2,7 +2,7 @@
 
 create_table = False
 
-import os, time, random, os.path, sys
+import os, time, random, os.path, sys, socket
 from dbconnect import dbconnect
 db,dbc = dbconnect()
 
@@ -91,7 +91,7 @@ def iterateSubspace(s8,s32):
   return s8,s32
 
 
-nextq = "SELECT s8,s32 FROM spaces ORDER BY s8,s32 DESC LIMIT 1"
+nextq = "SELECT s8,s32 FROM spaces ORDER BY s8 DESC,s32 DESC LIMIT 1"
 
 def getNextTarget():
   # Figure out which subspace we're going to scan next, and tell the database
@@ -128,8 +128,6 @@ def markDone(target):
   finally:
     dbc.execute("UNLOCK TABLES")
 
-
-
 def runNmap(address):
   extras = ""
   if address[0] == 192:
@@ -144,9 +142,39 @@ def runNmap(address):
     # linux9.ikp.physik.tu-darmstadt.de
     # we received a request to have this machine blocked from scanning
     extras = "--exclude 130.83.133.84"
+  if use_ip:
+    # Use a different IP address for scanning vs fetching, if we have one
+    # available.  This should make us less obnoxious in system logs
+    extras += " -S " + use_ip
   command = "nmap -sS -p443 -n -T4 --min-hostgroup 8192 --open -PN %s -oG range-%d-X-X-%d.txt --max-rtt-timeout 500 --randomize-hosts %d.*.*.%d > nmap-out-%d-X-X-%d.txt " % (extras, address[0], address[3], address[0], address[3], address[0], address[3])
   os.system(command)
   pass
+
+use_ip = altIP()
+def altIP():
+  """
+  Parse this:
+
+eth0:0    Link encap:Ethernet  HWaddr 00:25:90:39:16:4c  
+          inet addr:173.236.34.123  Bcast:173.236.34.127  Mask:255.255.255.248
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          Interrupt:16 Memory:fb5e0000-fb600000 
+  """
+  lines = os.system("ifconfig eth0:0").readlines()
+  for line in lines:
+    if "inet addr" in line:
+      entry = line.split()[1]  # 
+      _addr,_comma,ip = entry.partition(':')
+      try:
+        socket.inet_aton(ip)
+        print "Using IP address", ip, "for nmapping"
+        return ip
+      except:
+        print "failed to parse ip from\n" + lines
+        raise
+  print "No alternative IP found"
+  return None
+
 
 def grabCerts(address):
   command = "python NMapOutputToList.py range-%d-X-X-%d.txt" % (address[0], address[3])
@@ -193,7 +221,8 @@ cq = """
 CREATE TABLE spaces (
   s8 int NOT NULL, 
   s32 int NOT NULL, 
-  hits int default NULL
+  hits int default NULL, 
+  UNIQUE(s8,s32)
   )
 """
 if create_table:

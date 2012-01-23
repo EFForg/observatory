@@ -1,0 +1,9 @@
+#!/bin/bash
+INFO=`/sbin/ifconfig eth0 | grep "TX pack"`
+echo $INFO 
+INFO=`echo $INFO | cut -d: -f3 | cut -d' ' -f 1` 
+sleep 10s 
+INFO2=`/sbin/ifconfig eth0 | grep "TX pack"`
+echo $INFO2 
+INFO2=`echo $INFO2 | cut -d: -f3 | cut -d' ' -f 1` 
+echo `echo \( $INFO2 - $INFO \) / 10 | bc` packets sent per second

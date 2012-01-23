@@ -150,7 +150,6 @@ def runNmap(address):
   os.system(command)
   pass
 
-use_ip = altIP()
 def altIP():
   """
   Parse this:
@@ -175,6 +174,7 @@ eth0:0    Link encap:Ethernet  HWaddr 00:25:90:39:16:4c
   print "No alternative IP found"
   return None
 
+use_ip = altIP()
 
 def grabCerts(address):
   command = "python NMapOutputToList.py range-%d-X-X-%d.txt" % (address[0], address[3])

@@ -73,7 +73,10 @@ def getNextTarget():
       if result: 
         s32 = result[0] + 1
         # if this /8s is done, move on
-        if result == 256: continue
+        if s32 == 256: continue
+        if s32 > 256:
+          print "ARG, WTF %r " % (s8,s32)
+          sys.exit(1)
         # if we've scanned thirteen targets in this /8, and found no certs, chances
         # are that we aren't going to find any...
         dbc.execute(summary_of_s32q % s8)
@@ -105,7 +108,7 @@ def markDone(target):
   try:
     hits = 0
     for line in open("range-%d-X-X-%d.txt" % (s8,s32)).readlines():
-      if "open" in line:
+      if "/open" in line:
         hits += 1
     dbc.execute("UPDATE spaces SET hits=%d WHERE s8=%d AND s32=%d" % (hits,s8,s32))
   finally:

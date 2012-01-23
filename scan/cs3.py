@@ -6,7 +6,7 @@ import os, time, random, os.path, sys, socket
 from dbconnect import dbconnect
 db,dbc = dbconnect()
 
-#myRand = random.Random(time.time())
+myRand = random.Random(time.time())
 
 from xml.parsers.expat import ParserCreate
 parser = ParserCreate()
@@ -47,65 +47,48 @@ parser.EndElementHandler = end_element
 parser.CharacterDataHandler = char_data
 parser.ParseFile(open("ipv4-address-space.xml"))
 
-#myRand.shuffle(slash8s)
+myRand.shuffle(slash8s)
 print slash8s
 print len(slash8s)
 
-liveq = """
+next_s32q = "SELECT s32 FROM spaces WHERE s8 = %d ORDER BY s32 DESC LIMIT 1"
+summary_of_s32q = """
 SELECT COUNT(hits) AS scans, SUM(hits) as hits 
 FROM spaces 
-WHERE s8 = %d AND s32 = %d
+WHERE s8 = %d 
   AND hits IS NOT NULL
 """
-
 abandoned = {}
-def iterateSubspace(s8,s32):
-  s32 += 1
-  if s32 == 256:
-    s32 = 0
-    try:
-      # this indirection was intended to work with shuffling of slash8s but
-      # that has been abandonded since there is no reasnable way to have nextq
-      # ORDER BY this scanner's shuffle 
-      cur = slash8s.index(s8)
-      s8 = slash8s[cur + 1]
-      while True:
-        dbc.execute(liveq % (s8, s32))
-        scans,hits = dbc.fetchone()
-        FUTILE_THRESHOLD = 13                           # thirteen is a lucky number
-
-        if scans <= FUTILE_THRESHOLD or hits > 0:
-          # if we've scanned thirteen targets in this /8, and found no certs, chances
-          # are that we aren't going to find any...
-          break
-        elif scans > 13:
-          if s8 not in abandoned:
-            abandoned[s8] = True
-            print "Skipping %d.*.*.* (scanned %d subspaces, no hits)" % (s8, FUTILE_THRESHOLD)
-
-        cur = slash8s.index(s8)
-        s8 = slash8s[cur + 1]
-    except IndexError:
-      print "No more subspaces to scan, exiting"
-      sys.exit(0)
-  return s8,s32
-
-
-nextq = "SELECT s8,s32 FROM spaces ORDER BY s8 DESC,s32 DESC LIMIT 1"
+FUTILE_THRESHOLD = 13                           # thirteen is a lucky number
 
 def getNextTarget():
   # Figure out which subspace we're going to scan next, and tell the database
   # we're doing it.
   dbc.execute("LOCK TABLES spaces WRITE")
   try:
-    dbc.execute(nextq) 
-    result = dbc.fetchone()
-    if result:
-      s8, s32 = result
-      s8, s32 = iterateSubspace(s8, s32)
+    # walk through the /8s in our particular random order
+    for s8 in slash8s:
+      dbc.execute(next_s32q % s8) 
+      result = dbc.fetchone()
+      if result: 
+        s32 = result[0] + 1
+        # if this /8s is done, move on
+        if result == 256: continue
+        # if we've scanned thirteen targets in this /8, and found no certs, chances
+        # are that we aren't going to find any...
+        dbc.query(summary_of_s32q % s8)
+        scans, hits = dbc.fetchone()
+        if scans >= FUTILE_THRESHOLD and hits == 0:
+          if s8 not in abandoned:
+            abandoned[s8] = True
+            print "Skipping %d.*.*.* (scanned %d subspaces, no hits)" % (s8, FUTILE_THRESHOLD)
+          continue
+      else:
+        s32 = 0
+      break
     else:
-      print "Creating first scan entry!"
-      s8, s32 = slash8s[0], 0
+      print "No more subspaces to scan, exiting"
+      sys.exit(0)
     # writing this in with hits = NULL, to indicate that it's a
     # scan-in-progress
     q = "INSERT INTO spaces (s8, s32) VALUES (%d,%d)" % (s8,s32)

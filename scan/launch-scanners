@@ -1,6 +1,6 @@
 #!/bin/bash
 
 for n in `seq 64` ; do
-  ./cs3 > control-script-$n.out &
+  ./cs3.py > control-script-$n.out &
   sleep 5s
 done

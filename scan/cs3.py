@@ -51,12 +51,6 @@ parser.ParseFile(open("ipv4-address-space.xml"))
 print slash8s
 print len(slash8s)
 
-def lastOctet():
-  res = range(0, 256)
-  myRand.shuffle(res)
-  return res
-
-
 liveq = """
 SELECT COUNT(hits) AS scans, SUM(hits) as hits 
 FROM spaces 
@@ -85,7 +79,7 @@ def iterateSubspace(s8,s32):
           # are that we aren't going to find any...
           break
         elif scans > 13:
-          if s8 not in abandonded:
+          if s8 not in abandoned:
             abandoned[s8] = True
             print "Skipping %d.*.*.* (scanned %d subspaces, no hits)" % (s8, FUTILE_THRESHOLD)
 
@@ -121,12 +115,12 @@ def getNextTarget():
   finally:
     dbc.execute("UNLOCK TABLES")
 
-def mark_done(target):
+def markDone(target):
   s8, _s16, _s24, s32 = target
 
   dbc.execute("LOCK TABLES spaces WRITE")
   try:
-    dbc.execute("UPDATE SPACES SET hit=")
+    dbc.execute("UPDATE SPACES SET hits=")
   finally:
     dbc.execute("UNLOCK TABLES")
 
@@ -184,11 +178,11 @@ def main():
     grabCerts(cur)
     output.write("certGrab completed %r %s\n" % (cur, time.asctime()))
     output.flush()
-    mark_done(cur)
+    markDone(cur)
     scans_done += 1
     now = time.time()
     days = (now - starttime) / (24. * 3600)
-    output.write("%d subspaces scanned in %f days, %f per day" % (scans_done, days, scans_done/day))
+    output.write("%d subspaces scanned in %f days, %f per day" % (scans_done, days, scans_done/days))
     output.flush()
 
 cq = """

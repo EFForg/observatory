@@ -179,7 +179,7 @@ def main():
     output.write("starting position: %s %r\n" % (time.asctime(), cur))
     output.flush()
     runNmap(cur)
-    output.write("NMap Completed %r\n" % cur)
+    output.write("NMap Completed %r\n" % (cur,))
     output.flush()
     grabCerts(cur)
     output.write("certGrab completed %d %s\n" % (pos, time.asctime()))

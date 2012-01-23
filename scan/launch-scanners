@@ -1,6 +1,11 @@
 #!/bin/bash
 
-for n in `seq 64` ; do
+
+if [ "$#" != 1 ] ; then
+  echo USAGE: launch-scanners '<number of scanners>'
+fi
+
+for n in `seq $1` ; do
   ./cs3.py > control-script-$n.out &
   sleep 5s
 done

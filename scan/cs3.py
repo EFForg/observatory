@@ -182,7 +182,7 @@ def main():
     output.write("NMap Completed %r\n" % (cur,))
     output.flush()
     grabCerts(cur)
-    output.write("certGrab completed %d %s\n" % (pos, time.asctime()))
+    output.write("certGrab completed %r %s\n" % (cur, time.asctime()))
     output.flush()
     mark_done(cur)
     scans_done += 1

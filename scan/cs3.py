@@ -120,7 +120,11 @@ def markDone(target):
 
   dbc.execute("LOCK TABLES spaces WRITE")
   try:
-    dbc.execute("UPDATE SPACES SET hits=")
+    hits = 0
+    for line in open("range-%d-X-X-%d.txt" % (s8,s32)).readlines():
+      if "open" in line:
+        hits += 1
+    dbc.execute("UPDATE spaces SET hits=%d WHERE s8=%d AND s32=%d" % (hits,s8,s32))
   finally:
     dbc.execute("UNLOCK TABLES")
 

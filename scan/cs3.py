@@ -76,7 +76,7 @@ def getNextTarget():
         if result == 256: continue
         # if we've scanned thirteen targets in this /8, and found no certs, chances
         # are that we aren't going to find any...
-        dbc.query(summary_of_s32q % s8)
+        dbc.execute(summary_of_s32q % s8)
         scans, hits = dbc.fetchone()
         if scans >= FUTILE_THRESHOLD and hits == 0:
           if s8 not in abandoned:

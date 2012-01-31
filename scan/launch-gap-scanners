@@ -1,0 +1,11 @@
+#!/bin/bash
+
+
+if [ "$#" != 1 ] ; then
+  echo USAGE: launch-scanners '<number of scanners>'
+fi
+
+for n in `seq 33 $1` ; do
+  ./cs3.py --gaps > control-script-$n.out &
+  sleep 5s
+done

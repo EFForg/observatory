@@ -62,36 +62,45 @@ abandoned = {}
 FUTILE_THRESHOLD = 13                           # thirteen is a lucky number
 
 def getNextTarget():
+  "Choose what to scan next"
+  # walk through the /8s in our particular random order
+  for s8 in slash8s:
+    dbc.execute(next_s32q % s8) 
+    result = dbc.fetchone()
+    if result: 
+      s32 = result[0] + 1
+      # if this /8s is done, move on
+      if s32 == 256: continue
+      if s32 > 256:
+        print "ARG, WTF %r " % ((s8,s32),)
+        sys.exit(1)
+      # if we've scanned thirteen targets in this /8, and found no certs, chances
+      # are that we aren't going to find any...
+      dbc.execute(summary_of_s32q % s8)
+      scans, hits = dbc.fetchone()
+      if scans >= FUTILE_THRESHOLD and hits == 0:
+        if s8 not in abandoned:
+          abandoned[s8] = True
+          print "Skipping %d.*.*.* (scanned %d subspaces, no hits)" % (s8, FUTILE_THRESHOLD)
+        continue
+    else:
+      s32 = 0
+    break
+  else:
+    print "No more subspaces to scan, exiting"
+    sys.exit(0)
+  return s8,s32
+
+
+def markNextTarget(scan_gaps=False):
   # Figure out which subspace we're going to scan next, and tell the database
   # we're doing it.
   dbc.execute("LOCK TABLES spaces WRITE")
   try:
-    # walk through the /8s in our particular random order
-    for s8 in slash8s:
-      dbc.execute(next_s32q % s8) 
-      result = dbc.fetchone()
-      if result: 
-        s32 = result[0] + 1
-        # if this /8s is done, move on
-        if s32 == 256: continue
-        if s32 > 256:
-          print "ARG, WTF %r " % (s8,s32)
-          sys.exit(1)
-        # if we've scanned thirteen targets in this /8, and found no certs, chances
-        # are that we aren't going to find any...
-        dbc.execute(summary_of_s32q % s8)
-        scans, hits = dbc.fetchone()
-        if scans >= FUTILE_THRESHOLD and hits == 0:
-          if s8 not in abandoned:
-            abandoned[s8] = True
-            print "Skipping %d.*.*.* (scanned %d subspaces, no hits)" % (s8, FUTILE_THRESHOLD)
-          continue
-      else:
-        s32 = 0
-      break
+    if not scan_gaps:
+      s8, s32 = getNextTarget()
     else:
-      print "No more subspaces to scan, exiting"
-      sys.exit(0)
+      s8, s32 = nextGapTarget()
     # writing this in with hits = NULL, to indicate that it's a
     # scan-in-progress
     q = "INSERT INTO spaces (s8, s32) VALUES (%d,%d)" % (s8,s32)
@@ -100,6 +109,28 @@ def getNextTarget():
     return (s8, "*","*", s32)
   finally:
     dbc.execute("UNLOCK TABLES")
+
+next_gapq = """
+SELECT s8, 
+       s32 +1 AS hole, 
+       (
+         SELECT MIN(s2.s32) FROM spaces AS s2 
+         WHERE s2.s8=spaces.s8 AND s2.s32 > spaces.s32
+       ) as next 
+FROM spaces 
+WHERE s8 IN (SELECT s8 
+             FROM spaces 
+             GROUP BY s8 
+             HAVING COUNT(s8) >18 AND COUNT(s8) < 256
+            ) 
+HAVING next - hole > 0 
+LIMIT 1;
+"""
+
+def nextGapTarget():
+  dbc.execute(next_gapq)
+  s8,hole,next = dbc.fetchone()
+  return s8,hole
 
 def markDone(target):
   s8, _s16, _s24, s32 = target
@@ -186,8 +217,11 @@ def main():
   starttime = time.time()
   scans_done = 0
 
+  gaps = ("--gaps" in sys.argv)
+  if gaps: print "Scanning gaps"
+
   while True:
-    cur = getNextTarget()
+    cur = markNextTarget(gaps)
     output.write("starting position: %s %r\n" % (time.asctime(), cur))
     output.flush()
     runNmap(cur)

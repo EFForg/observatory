@@ -100,6 +100,7 @@ def markNextTarget(scan_gaps=False):
     if not scan_gaps:
       s8, s32 = getNextTarget()
     else:
+      dbc.execute("LOCK TABLES spaces AS s2 WRITE")
       s8, s32 = nextGapTarget()
     # writing this in with hits = NULL, to indicate that it's a
     # scan-in-progress

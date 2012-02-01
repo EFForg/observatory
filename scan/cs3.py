@@ -95,7 +95,7 @@ def getNextTarget():
 def markNextTarget(scan_gaps=False):
   # Figure out which subspace we're going to scan next, and tell the database
   # we're doing it.
-  dbc.execute("LOCK TABLES spaces WRITE, spaces AS s2 WRITE")
+  dbc.execute("LOCK TABLES spaces WRITE, spaces AS s2 WRITE, spaces AS s3 WRITE")
   try:
     if not scan_gaps:
       s8, s32 = getNextTarget()
@@ -119,7 +119,7 @@ SELECT s8,
        ) as next 
 FROM spaces 
 WHERE s8 IN (SELECT s8 
-             FROM spaces 
+             FROM spaces AS s3
              GROUP BY s8 
              HAVING COUNT(s8) >18 AND COUNT(s8) < 256
             ) 

@@ -95,12 +95,11 @@ def getNextTarget():
 def markNextTarget(scan_gaps=False):
   # Figure out which subspace we're going to scan next, and tell the database
   # we're doing it.
-  dbc.execute("LOCK TABLES spaces WRITE")
+  dbc.execute("LOCK TABLES spaces WRITE, spaces AS s2 WRITE")
   try:
     if not scan_gaps:
       s8, s32 = getNextTarget()
     else:
-      dbc.execute("LOCK TABLES spaces AS s2 WRITE")
       s8, s32 = nextGapTarget()
     # writing this in with hits = NULL, to indicate that it's a
     # scan-in-progress

@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 """
-Gives you the file name and runs openssl, returning the array of certificate 
-results for every ssl certificate conversation (.result file) under the passed 
-in directory.
+Variout utilities for extracting certs from raw SSL server responses (.results
+files).
+
+When called as a command line tool, walks a directory, and gives you the file
+name and runs openssl, returning the array of certificate results for every
+ssl certificate conversation (.result file) under the passed in directory.
 """
 
 import os, subprocess, sys, os.path

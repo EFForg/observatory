@@ -163,6 +163,7 @@ def toOpensslText(in_name):
   try:
     f = open(in_name, 'rb')
     certs = dataToCerts(f.read())
+    assert certs
     f.close()
     for count,certificate in enumerate(certs):
       try:

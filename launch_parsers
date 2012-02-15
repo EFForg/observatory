@@ -10,7 +10,7 @@
 
 set -x
 
-export RESULTS_ROOT=/reimport/scan/
+export RESULTS_ROOT=/space/results
 
 if ! [ -d "$RESULTS_ROOT" ] ; then
   echo RESULTS_ROOT $RESULTS_ROOT is not a directory
@@ -33,7 +33,7 @@ fi
 
 
 cd $RESULTS_ROOT
-TARGETS=`echo *.x.x.x`
+TARGETS=`echo observatory*/*.x.x.x`
 echo $TARGETS
 if echo $targets | grep -q \* ; then
   echo no targets found
@@ -43,7 +43,7 @@ cd ~-
 TABLES=""
 
 for n in $TARGETS ; do 
-  TNAME=certs`echo $n | sed s/\.x\.x\.x//`
+  TNAME=certs`echo $n | sed s/\.x\.x\.x// | sed s/observatory//`
   echo $TNAME
   if [ -f /tmp/scanner$n.$$.txt.gz ] && ! rm /tmp/scanner$n.$$.txt.gz  ; then
     echo TRIPPED OVER SOMEONE ELSE\'S TEMP FILES

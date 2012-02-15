@@ -43,9 +43,9 @@ cd ~-
 TABLES=""
 
 for n in $TARGETS ; do 
-  TNAME=certs`echo $n | sed s/\.x\.x\.x// | sed s/observatory//`
+  TNAME=certs`echo $n | sed s/\.x\.x\.x// | sed s/observatory// | sed s/\\//-/`
   echo $TNAME
-  if [ -f /tmp/scanner$n.$$.txt.gz ] && ! rm /tmp/scanner$n.$$.txt.gz  ; then
+  if [ -f /tmp/scanner$TNAME$$.txt.gz ] && ! rm /tmp/scanner$TNAME.$$.txt.gz  ; then
     echo TRIPPED OVER SOMEONE ELSE\'S TEMP FILES
   fi
 
@@ -53,7 +53,7 @@ for n in $TARGETS ; do
     echo ALREADY EXISTS: $TNAME
   else
     echo IMPORTING $TNAME
-    python ./hackparse.py --table $TNAME --create $RESULTS_ROOT/$n | gzip -c > /tmp/scanner$n.$$.txt.gz &
+    python ./hackparse.py --table $TNAME --create $RESULTS_ROOT/$n | gzip -c > /tmp/scanner$TNAME.$$.txt.gz &
   fi
   TABLES="$TABLES $TNAME"
   while [ `ps waux | grep -v grep | grep hackpa | wc -l` -ge $NUM_THRDS ] ; do

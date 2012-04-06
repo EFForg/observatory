@@ -2,6 +2,7 @@
 
 require_once('database.php');
 require_once('helpers.php');
+require_once('config.php');
 
 $ERROR = "bulk_error.log";
 $CWD = ".";
@@ -10,11 +11,11 @@ $CWD = ".";
 
 $db = new Database($c['mysql_host'], $c['mysql_username'], $c['mysql_password'], $c['mysql_database']);
 
-$query = "select raw_cert from certs";
+$query = "select raw_cert from certs limit 10000";
 $res = $db->results_query($query);
 
 
-print count($res);
+//print count($res);
 //print_r($res);
 //exit(1);
 

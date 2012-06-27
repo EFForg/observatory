@@ -108,10 +108,128 @@ class Certificate(univ.Sequence):
         namedtype.NamedType('signatureValue', univ.BitString())
         )
 
+
+# Dan's extension edits here
+
+# Extension 2.5.29.17
+class GeneralName(univ.Choice):
+     componentType = namedtype.NamedTypes(
+         namedtype.NamedType('otherName',
+univ.Sequence().subtype(implicitTag=tag.Tag(tag.tagClassContext,
+tag.tagFormatSimple, 0))),
+         namedtype.NamedType('rfc822Name',
+char.IA5String().subtype(implicitTag=tag.Tag(tag.tagClassContext,
+tag.tagFormatSimple, 1))),
+         namedtype.NamedType('dNSName',
+char.IA5String().subtype(implicitTag=tag.Tag(tag.tagClassContext,
+tag.tagFormatSimple, 2))),
+         namedtype.NamedType('x400Address',
+univ.Sequence().subtype(implicitTag=tag.Tag(tag.tagClassContext,
+tag.tagFormatSimple, 3))),
+         namedtype.NamedType('directoryName',
+univ.Choice().subtype(implicitTag=tag.Tag(tag.tagClassContext,
+tag.tagFormatSimple, 4))),
+         namedtype.NamedType('ediPartyName',
+univ.Sequence().subtype(implicitTag=tag.Tag(tag.tagClassContext,
+tag.tagFormatSimple, 5))),
+         namedtype.NamedType('uniformResourceIdentifier',
+char.IA5String().subtype(implicitTag=tag.Tag(tag.tagClassContext,
+tag.tagFormatSimple, 6))),
+         namedtype.NamedType('iPAddress',
+univ.OctetString().subtype(implicitTag=tag.Tag(tag.tagClassContext,
+tag.tagFormatSimple, 7))),
+         namedtype.NamedType('registeredID',
+univ.ObjectIdentifier().subtype(implicitTag=tag.Tag(tag.tagClassContext, 
+tag.tagFormatSimple, 8))),
+         )
+
+class GeneralNames(univ.SequenceOf):
+     componentType = GeneralName()
+     sizeSpec = univ.SequenceOf.sizeSpec + constraint.ValueSizeConstraint(1, MAX)
+
+class DistributionPointName(univ.Choice):
+     componentType = namedtype.NamedTypes(
+         namedtype.NamedType('fullName',
+GeneralNames().subtype(implicitTag=tag.Tag(tag.tagClassContext,
+tag.tagFormatSimple, 0))),
+         namedtype.NamedType('nameRelativeToCRLIssuer',
+univ.SetOf().subtype(implicitTag=tag.Tag(tag.tagClassContext,
+tag.tagFormatSimple, 1))),
+         )
+
+class DistributionPoint(univ.Sequence):
+     componentType = namedtype.NamedTypes(
+         namedtype.OptionalNamedType('distributionPoint',
+DistributionPointName().subtype(implicitTag=tag.Tag(tag.tagClassContext, 
+
+tag.tagFormatSimple, 0))),
+         namedtype.OptionalNamedType('reasons',
+univ.BitString().subtype(implicitTag=tag.Tag(tag.tagClassContext,
+tag.tagFormatSimple, 1))),
+         namedtype.OptionalNamedType('cRLIssuer',
+GeneralNames().subtype(implicitTag=tag.Tag(tag.tagClassContext,
+tag.tagFormatSimple, 2))),
+         )
+
+# Extension 2.5.29.37
+class KeyPurposeId(univ.ObjectIdentifier): pass
+
+class KeyPurposeIds(univ.SequenceOf):
+    componentType = KeyPurposeId()
+    sizeSpec = univ.SequenceOf.sizeSpec + constraint.ValueSizeConstraint(1, MAX)
+
+# Extension 2.5.29.14. todo: fix/understand this
+class KeyIdentifier(univ.OctetString): pass
+    #componentType = namedtype.NamedTypes(namedtype.NamedType('keyIdentifier', univ.OctetString()))
+
+class SubjectKeyIdentifier(univ.OctetString): pass
+
+#class SubjectKeyIdentifier(univ.Sequence):
+#    componentType = namedtype.NamedTypes(namedtype.NamedType('subjectKeyIdentifier', KeyIdentifier().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 4))))
+
+# Extension 2.5.29.35
+class AuthorityKeyIdentifier(univ.Sequence):
+    componentType = namedtype.NamedTypes(
+        namedtype.OptionalNamedType('keyIdentifier', KeyIdentifier().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))),
+        namedtype.OptionalNamedType('authorityCertIssuer', GeneralNames().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1))),
+        namedtype.OptionalNamedType('authorityCertSerialNumber', CertificateSerialNumber().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 2))))
+
+# Extension 2.5.29.31
+class CRLDistPointsSyntax(univ.SequenceOf):
+    componentType = DistributionPoint()
+    sizeSpec = univ.SequenceOf.sizeSpec + constraint.ValueSizeConstraint(1, MAX)
+
+# Extension 1.3.6.1.5.5.7.1.1
+# todo: here figuring this out
+class AccessDescription(univ.Sequence):
+    componentType = namedtype.NamedTypes(
+        namedtype.OptionalNamedType('accessMethod', univ.ObjectIdentifier().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))),
+        namedtype.OptionalNamedType('accessLocation', GeneralName().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1))),
+        namedtype.OptionalNamedType('b2', univ.BitString().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 2))),
+        namedtype.OptionalNamedType('b3', univ.BitString().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 3))),
+        namedtype.OptionalNamedType('b4', univ.BitString().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 4))),
+        namedtype.OptionalNamedType('b5', univ.BitString().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 5))),
+        namedtype.OptionalNamedType('b6', univ.BitString().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 6))))
+
+
+
+
+
+class AuthorityInfoAccess(univ.SequenceOf):
+    componentType = AccessDescription()
+    sizeSpec = univ.SequenceOf.sizeSpec + constraint.ValueSizeConstraint(1, MAX)
+
+
 # end of ASN.1 data structures
 
+octetType = univ.OctetString()
 certType = Certificate()
-#octetType = univ.OctetString()
+genNames = GeneralNames()
+name_2_5_29_37 = KeyPurposeIds()
+name_2_5_29_14 = SubjectKeyIdentifier()
+name_2_5_29_35 = AuthorityKeyIdentifier()
+name_2_5_29_31 = CRLDistPointsSyntax()
+name_1_3_6_1_5_5_7_1_1 = AuthorityInfoAccess()
 
 # Read PEM certs from stdin and print them out in plain text
 
@@ -204,33 +322,27 @@ for certLine in sys.stdin.readlines():
                 print "Error"
             extn_value = extn.getComponentByPosition(2)
             #print extn_value.prettyPrint()
-            try:
-                extn_string = decoder.decode(extn_value) #, asn1Spec=univ.OctetString())
+            if extn_id == (2,5,29,17):
+                extn_string = decoder.decode(extn_value, asn1Spec=genNames)
                 print extn_string
-            except:
-                #extn_string = decoder.decode(extn_value, asn1Spec=univ.Any)
-                #print extn_string
-                print "Error with extension %s" % extn_id
-            #print extn_string
-#            print extn_string[0]
-            #print extn_value
-            #for let in extn_value:
-            #    print ord(let)
-            #break
-            #print extn_value.asNumbers()
-            
-                                
-            #print hex(extn_value)
-            #print binascii.a2b_hex(str(extn_value))
-
-                
-
-        #print extensions
-
-        #print TBS[0]
-        # for idx in range(len(TBS)):
-        #    print "%s: %s" % (TBS.getTypeByPosition(idx), TBS.getComponentByPosition(idx))
-           #TBS.getNameByPosition(idx) # this doesn't work
+            elif extn_id == (2,5,29,37):
+                extn_string = decoder.decode(extn_value, asn1Spec=name_2_5_29_37)
+                print extn_string
+            elif extn_id == (2,5,29,14):
+                # todo fix this?
+                extn_string = decoder.decode(extn_value, asn1Spec=name_2_5_29_14)
+                print extn_string[0].prettyPrint()
+            elif extn_id == (2,5,29,35):
+                extn_string = decoder.decode(extn_value, asn1Spec=name_2_5_29_35)
+                print extn_string
+            elif extn_id == (2,5,29,31):
+                extn_string = decoder.decode(extn_value, asn1Spec=name_2_5_29_31)
+                print extn_string
+            elif extn_id == (1,3,6,1,5,5,7,1,1):
+                extn_string = decoder.decode(extn_value, asn1Spec=name_1_3_6_1_5_5_7_1_1)
+                print extn_string
+            else:
+                print "Unknown extension: %s" % extn_id
         
         assert encoder.encode(cert) == substrate, 'cert recode fails'
         

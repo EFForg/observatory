@@ -10,7 +10,15 @@ except: DB_PASS = "root"
 try:    from db_private import DB_NAME  
 except: DB_NAME = "observatory_api"
 
+TEST_DB_NAME = "tmp_TESTDB1"
+
 def dbconnect():
   db = MySQLdb.connect(user=DB_USER, passwd=DB_PASS, db=DB_NAME)
   dbc = db.cursor()
   return db,dbc
+
+def dbconnecttest():
+  db = MySQLdb.connect(user=DB_USER, passwd=DB_PASS, db=TEST_DB_NAME)
+  dbc = db.cursor()
+  return db,dbc
+  

@@ -32,6 +32,7 @@ all_trusted_ca_path = ['/home/pde/sslscanner/allcerts',
                       './allcerts/']
 
 moz_ca_store = filter(os.path.isdir, moz_trusted_ca_path)[0]
+#print "moz_ca_store is %s" % moz_ca_store
 ms_ca_store  = filter(os.path.isdir, ms_trusted_ca_path)[0]
 all_ca_store  = filter(os.path.isdir, all_trusted_ca_path)[0]
 

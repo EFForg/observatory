@@ -23,13 +23,14 @@ DER_ARGS = ['openssl', 'x509', '-fingerprint', '-inform', 'DER', '-noout', '-tex
 # would be better to use a relative path to mozilla_CAs, but we don't know how
 # to get there...
 moz_trusted_ca_path = ['/tmp/cas','/home/jesse/sslscanner/mozilla_CAs',
-                       'mozilla_CAs','./mozilla_CAs/']
+                       'mozilla_CAs','./mozilla_CAs/',
+                       'observatory/mozilla_CAs']
 ms_trusted_ca_path = ['/home/pde/sslscanner/microsoft_CAs',
                       '/home/pde/eff/ssl/survey/scanner3/microsoft_CAs',
-                      './microsoft_CAs/']
+                      './microsoft_CAs/', 'observatory/microsoft_CAs']
 all_trusted_ca_path = ['/home/pde/sslscanner/allcerts',
                       '/home/pde/eff/ssl/survey/scanner3/allcerts',
-                      './allcerts/']
+                      './allcerts/', 'observatory/allcerts']
 
 moz_ca_store = filter(os.path.isdir, moz_trusted_ca_path)[0]
 ms_ca_store  = filter(os.path.isdir, ms_trusted_ca_path)[0]

@@ -4,6 +4,8 @@ from Crypto.PublicKey import RSA
 from Crypto.Util.number import long_to_bytes, bytes_to_long
 from M2Crypto import X509
 from datetime import datetime
+import sys
+sys.path.append('/home/dan/git/observatory')
 import crypto
 import crypto_utils
 import dbconnect
@@ -80,13 +82,13 @@ class CertificateParser(object):
         if not cert:
             return
         self.raw_der_cert = cert
-        derived_fp = cert.get_fingerprint(md='md5') + cert.get_fingerprint(md='sha1')
+        derived_fp = self.addZeroes((cert.get_fingerprint(md='md5') + cert.get_fingerprint(md='sha1')).strip())
         if not fingerprint:
             # could rely on derived fp too?
             print "Warning: missing fingerprint! relying on derived fp"
             self.fingerprint = derived_fp
         else:
-            self.fingerprint = fingerprint
+            self.fingerprint = self.addZeroes(fingerprint.strip())
             # sanity check fp
             if derived_fp != self.fingerprint:
                 raise ValueError, "Fingerprint does not match! Derived fp is: %s. Given is %s" % (derived_fp, self.fingerprint)
@@ -101,6 +103,15 @@ class CertificateParser(object):
                 # Another instance already created this column
                 return
             raise e
+
+    def addZeroes(self, fp):
+        if len(fp) == 72: return fp
+        if len(fp) < 72:
+            num_zeroes = 72 - len(fp)
+            a = ''
+            for i in xrange(num_zeroes):
+                a += '0'
+            return a+fp
 
     def createTableIfMissing(self):
         q = """CREATE TABLE IF NOT EXISTS %s (

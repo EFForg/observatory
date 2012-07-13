@@ -22,12 +22,12 @@ class TransvalidityChecker(object):
     def expandTrustRootToValidCAs(self):
         num_added = 0
         # get CA certs
-        ca_certs = self.getCertsFromWhereClause("`X509v3 extensions: basicConstraints` LIKE '%CA:TRUE%' and Valid != 1")
-        print "Found %s ostensibly invalid CA certs" % len(ca_certs)
+        ca_certs = self.getCertsFromWhereClause("`X509v3 extensions: basicConstraints` LIKE '%CA:TRUE%' and (Valid IS NULL or Valid != 1)")
+        print "Found %s ostensibly non-trusted CA certs" % len(ca_certs)
         for fp_hex, cert in ca_certs:
             # is this cert valid, given existing trust root?
-            if self.verifyAgainstTrustRoot(cert):
-                self.addCertToTrustRoot(cert, fp_hex)
+            if self.verifyAgainstTrustRoot(fp_hex, cert):
+                self.addCertToTrustRoot(fp_hex, cert)
                 num_added += 1
         return num_added
 
@@ -38,12 +38,25 @@ class TransvalidityChecker(object):
                 break
             print "Added %s new CA certs to root" % num
     
-    def verifyAgainstTrustRoot(self, cert):
-        if openssl_dump.verifyOneCert(cert, [], FULL_CA_TRUST_ARGS, 3, True) == "Yes":
+    def verifyAgainstTrustRoot(self, fp_hex, cert):
+        # hack, must be in the right directory. todo fix this
+        filename = '/tmp/%s.crt' % fp_hex
+        f = open(filename, 'w')
+        f.write(cert)
+        f.close()
+        self.convertToPem(filename)
+        f = open(filename, 'r')
+        cert = f.read()
+        f.close()
+        try:
+            os.remove(filename)
+        except:
+            print "Couldnt remove file"
+        if openssl_dump.verifyOneCert(cert, [], FULL_CA_TRUST_ARGS, []).startswith("Yes"):
             return True
         else: return False
 
-    def addCertToTrustRoot(self, cert, fp_hex):
+    def addCertToTrustRoot(self, fp_hex, cert):
         # hack, must be in the right directory. todo fix this
         filename = 'allvalidcacerts/%s.crt' % fp_hex
         f = open(filename, 'w')
@@ -74,7 +87,7 @@ class TransvalidityChecker(object):
                 return
             raise e
 
-    def convertToPem(filename):
+    def convertToPem(self, filename):
         subprocess.call(['openssl', 'x509', '-in', filename, '-inform', 'der', '-outform', 'pem', '-out', filename])
 
 

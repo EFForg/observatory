@@ -34,7 +34,7 @@ def readPemChainFromFile(fileObj):
 
 def checkChain(chain):
     verify_moz = openssl_dump.verifyOneCert(chain[0], chain[1:], openssl_dump.MOZ_VERIFY_ARGS, [])
-    verify_ms = openssl_dump.verifyOneCert(chain[0], chain[1:], openssl_dump.MS_VERIFY_ARGS, [], 3)
+    verify_ms = openssl_dump.verifyOneCert(chain[0], chain[1:], openssl_dump.MS_VERIFY_ARGS, [])
     # oh boy using stdout to communicate with php is ugly...
     print verify_moz
     print verify_ms

@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 
-# get transvalidity working
-
 import sys, os, subprocess, base64
 import openssl_dump
 import dbconnect
+
+# ugly hack
+TRANSVALID_PATH = './allvalidcacerts'
+TRANSVALID_VERIFY_ARGS = ['openssl', 'verify', '-CApath', TRANSVALID_PATH]
 
 def readPemChainFromFile(fileObj):
     final = []
@@ -35,16 +37,18 @@ def readPemChainFromFile(fileObj):
 def checkChain(chain):
     verify_moz = openssl_dump.verifyOneCert(chain[0], chain[1:], openssl_dump.MOZ_VERIFY_ARGS, [])
     verify_ms = openssl_dump.verifyOneCert(chain[0], chain[1:], openssl_dump.MS_VERIFY_ARGS, [])
+    verify_transvalid = openssl_dump.verifyOneCert(chain[0], chain[1:],TRANSVALID_VERIFY_ARGS, [])
     # oh boy using stdout to communicate with php is ugly...
     print verify_moz
     print verify_ms
+    print verify_transvalid
 
 # Read ASN.1/PEM X.509 certificates on stdin, parse each into plain text,
 # then build substrate from it
 if __name__ == '__main__':
     chain = readPemChainFromFile(sys.stdin)
     if not chain:
-        print "No chain to check!"
+        sys.stderr.write("No chain to check!\n")
     else:
         checkChain(chain)
 

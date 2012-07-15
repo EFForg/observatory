@@ -4,8 +4,6 @@ from Crypto.PublicKey import RSA
 from Crypto.Util.number import long_to_bytes, bytes_to_long
 from M2Crypto import X509
 from datetime import datetime
-import sys
-sys.path.append('/home/dan/git/observatory')
 import crypto
 import crypto_utils
 import dbconnect
@@ -82,19 +80,22 @@ class CertificateParser(object):
         if not cert:
             return
         self.raw_der_cert = cert
-        derived_fp = self.addZeroes((cert.get_fingerprint(md='md5') + cert.get_fingerprint(md='sha1')).strip())
+        derived_fp = self.addZeroes(cert.get_fingerprint(md='md5').strip(),32) + self.addZeroes(cert.get_fingerprint(md='sha1').strip(), 40)
         if not fingerprint:
             # could rely on derived fp too?
-            print "Warning: missing fingerprint! relying on derived fp"
-            self.fingerprint = derived_fp
+            raise ValueError, "Must pass in fp"
+            # todo turn this toggle into command-line option
+            #sys.stderr.write("Warning: missing fingerprint! relying on derived fp")
+            #self.fingerprint = derived_fp
+            
         else:
-            self.fingerprint = self.addZeroes(fingerprint.strip())
+            self.fingerprint = self.addZeroes(fingerprint.strip(), 72)
             # sanity check fp
             if derived_fp != self.fingerprint:
-                raise ValueError, "Fingerprint does not match! Derived fp is: %s. Given is %s" % (derived_fp, self.fingerprint)
+                raise ValueError, "Fingerprint does not match. Derived fp is: %s. Given is %s" % (derived_fp, self.fingerprint)
 
     def executeQuery(self, q):
-        sys.stderr.write("Executing: %s" % q)
+        #sys.stderr.write("Executing: %s" % q)
         try:
             self.gdbc.execute(q)
         except _mysql_exceptions.OperationalError, e:
@@ -104,10 +105,11 @@ class CertificateParser(object):
                 return
             raise e
 
-    def addZeroes(self, fp):
-        if len(fp) == 72: return fp
-        if len(fp) < 72:
-            num_zeroes = 72 - len(fp)
+    def addZeroes(self, fp, strlen):
+        # make sure leading 0s aren't left out
+        if len(fp) >= strlen: return fp
+        if len(fp) < strlen:
+            num_zeroes = strlen - len(fp)
             a = ''
             for i in xrange(num_zeroes):
                 a += '0'
@@ -184,7 +186,12 @@ class CertificateParser(object):
         field_dict['Validity:Not After'] = cert.get_not_after().get_datetime()
         field_dict['Version'] = cert.get_version()
         field_dict['SHA1_Fingerprint'] = toColon(cert.get_fingerprint(md='sha1'))
-        field_dict['Version'] = VERSION_DICT[cert.get_version()]
+        ver = cert.get_version()
+        if ver not in VERSION_DICT:
+            sys.stderr.write('Warning: Unknown vesion for certificate')
+            field_dict['Version'] = "Unknown - raw value: %s" % ver
+        else:
+            field_dict['Version'] = VERSION_DICT[ver]
 
         c = crypto.Certificate(name=cert.get_subject().as_text().decode('utf8'),
                                pubkey=pub, 
@@ -206,7 +213,7 @@ class CertificateParser(object):
             dkey = self.gdb.escape_string('X509v3 extensions: %s%s' % (critical, eid))
             dval = self.gdb.escape_string(ev.strip().replace('\n', ''))
             if dkey in field_dict:
-                # todo warning?
+                sys.stderr.write('Warning: multiple X.509 extensions with name %s' % dkey)
                 field_dict[dkey] += " [AND ADDITONAL X509 EXTENSION ENTRY WITH THIS NAME IN CERT] %s" % dval
             else:
                 field_dict[dkey] = dval

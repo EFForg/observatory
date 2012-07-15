@@ -27,8 +27,13 @@ class TransvalidityChecker(object):
         for fp_hex, cert in ca_certs:
             # is this cert valid, given existing trust root?
             if self.verifyAgainstTrustRoot(fp_hex, cert):
+                print "Adding %s to the trust root" % fp_hex
                 self.addCertToTrustRoot(fp_hex, cert)
                 num_added += 1
+        print "Added %s to trust root" % num_added
+        print "Rehashing"
+        if num_added > 0:
+            self.rehash()
         return num_added
 
     def generateTrustRoot(self):
@@ -36,7 +41,6 @@ class TransvalidityChecker(object):
             num = self.expandTrustRootToValidCAs()
             if num == 0:
                 break
-            print "Added %s new CA certs to root" % num
     
     def verifyAgainstTrustRoot(self, fp_hex, cert):
         # hack, must be in the right directory. todo fix this
@@ -63,12 +67,11 @@ class TransvalidityChecker(object):
         f.write(cert)
         f.close()
         self.convertToPem(filename)
-        self.rehash()
         # also mark it valid in the db
         q = "UPDATE parsed_certs set Valid=1 where cert_fp = unhex('%s')" % fp_hex
         self.executeQuery(q)
 
-    def rehash():
+    def rehash(self):
         subprocess.call(['c_rehash', 'allvalidcacerts'])
 
     def getCertsFromWhereClause(self, clause):
@@ -76,7 +79,7 @@ class TransvalidityChecker(object):
         self.executeQuery(q)
         return self.gdbc.fetchall()
 
-    def executeQuery(self, q):
+    def executeQuery(self, q, num_retries=3):
         print "Executing: %s" % q
         try:
             self.gdbc.execute(q)
@@ -85,7 +88,14 @@ class TransvalidityChecker(object):
             if "Duplicate column name" in `e`:
                 # Another instance already created this column
                 return
-            raise e
+            elif "Deadlock" in `e`:
+                # retry
+                if num_retries <= 0:
+                    print "Already maxed out on retries, not executing"
+                else:
+                    self.executeQuery(q, num_retries - 1)                
+            else:
+                raise e
 
     def convertToPem(self, filename):
         subprocess.call(['openssl', 'x509', '-in', filename, '-inform', 'der', '-outform', 'pem', '-out', filename])

@@ -67,7 +67,7 @@ def toColon(b):
     return a
 
 class CertificateParser(object):
-    def __init__(self, raw_der_cert, fingerprint=None, table_name=None, connect=dbconnect.dbconnect(), existing_fields=[]):
+    def __init__(self, raw_der_cert, fingerprint=None, table_name=None, connect=dbconnect.dbconnect(), existing_fields=[], skipfpcheck=False):
         self.gdb, self.gdbc = connect
         if not table_name:
             self.table_name = TABLE_NAME
@@ -75,6 +75,7 @@ class CertificateParser(object):
             self.table_name = table_name
         self.existing_fields = existing_fields
         self.loadCert(raw_der_cert, fingerprint)
+        self.skipfpcheck = skipfpcheck
 
     def loadCert(self, cert, fingerprint, root=False):
         if not cert:
@@ -82,11 +83,11 @@ class CertificateParser(object):
         self.raw_der_cert = cert
         derived_fp = self.addZeroes(cert.get_fingerprint(md='md5').strip(),32) + self.addZeroes(cert.get_fingerprint(md='sha1').strip(), 40)
         if not fingerprint:
-            # could rely on derived fp too?
-            raise ValueError, "Must pass in fp"
-            # todo turn this toggle into command-line option
-            #sys.stderr.write("Warning: missing fingerprint! relying on derived fp")
-            #self.fingerprint = derived_fp
+            if self.skipfpcheck:
+                sys.stderr.write("Warning: missing fingerprint! relying on derived fp %s\n" % derived_fp)
+                self.fingerprint = derived_fp
+            else:
+                raise ValueError, "Must pass in fp"
         else:
             self.fingerprint = self.addZeroes(fingerprint.strip(), 72)
             # sanity check fp
@@ -163,10 +164,7 @@ class CertificateParser(object):
         cert = self.raw_der_cert
         if not cert:
             raise ValueError, "Must supply cert"
-        #try:
         rsa = cert.get_pubkey().get_rsa()
-        #except ValueError:
-        #    return None
 
         field_dict = {}
 
@@ -190,7 +188,7 @@ class CertificateParser(object):
         field_dict['SHA1_Fingerprint'] = toColon(cert.get_fingerprint(md='sha1'))
         ver = cert.get_version()
         if ver not in VERSION_DICT:
-            sys.stderr.write('Warning: Unknown vesion for certificate')
+            sys.stderr.write('Warning: Unknown vesion for certificate\n')
             field_dict['Version'] = "Unknown - raw value: %s" % ver
         else:
             field_dict['Version'] = VERSION_DICT[ver]
@@ -205,8 +203,6 @@ class CertificateParser(object):
                                notBefore=cert.get_not_before().get_datetime(),
                                notAfter=cert.get_not_after().get_datetime())
 
-        #print str(c)
-
         for i in range(cert.get_ext_count()):
             ext = cert.get_ext_at(i)
             eid = ext.get_name()
@@ -219,7 +215,7 @@ class CertificateParser(object):
             dkey = self.gdb.escape_string('X509v3 extensions: %s%s' % (critical, eid))
             dval = self.gdb.escape_string(ev.strip().replace('\n', ''))
             if dkey in field_dict:
-                sys.stderr.write('Warning: multiple X.509 extensions with name %s' % dkey)
+                sys.stderr.write('Warning: multiple X.509 extensions with name %s\n' % dkey)
                 field_dict[dkey] += " [AND ADDITONAL X509 EXTENSION ENTRY WITH THIS NAME IN CERT] %s" % dval
             else:
                 field_dict[dkey] = dval
@@ -228,11 +224,11 @@ class CertificateParser(object):
     def loadToMySQL(self):
         self.createTableIfMissing()
         if not self.certFpNeeded():
-            sys.stderr.write("Cert already exists in db with fp %s" % self.fingerprint)
+            sys.stderr.write("Cert already exists in db with fp %s\n" % self.fingerprint)
             return
         dict_to_load = self.prepareDictForMySQL()
         if not dict_to_load:
-            sys.stderr.write("Unable to load certificate")
+            sys.stderr.write("Unable to load certificate with fp %s \n" % self.fingerprint)
             return
         self.addMissingFields(dict_to_load)
         self.loadEntry(dict_to_load)
@@ -249,30 +245,21 @@ if __name__ == '__main__':
     parser.add_argument('--pem', action='store_true', dest='pem', default=False)
     parser.add_argument('--test', action='store_true', dest='test', default=False)
     parser.add_argument('--root', action='store_true', dest='root', default=False)
+    parser.add_argument('--skip-fp-check', action='store_true', dest='skip_fp_check', default=False)
     args = parser.parse_args()
 
     if args.test:
-        certparser = CertificateParser(None, args.fingerprint, args.table, dbconnect.dbconnecttest())
+        certparser = CertificateParser(None, args.fingerprint, args.table, dbconnect.dbconnecttest(), skipfpcheck=args.skip_fp_check)
     else:
-        certparser = CertificateParser(None, args.fingerprint, args.table)
+        certparser = CertificateParser(None, args.fingerprint, args.table, skipfpcheck=args.skip_fp_check)
 
     if args.pem:
         substrate = readPemFromFile(sys.stdin)
     else:
         substrate = readFromObservatory(sys.stdin)
-            #raise ValueError, "DER encoding not implemented. Need --pem flag"
-            #substrate = sys.stdin.readline()
     if not substrate:
-        sys.stderr.write("No substrate, breaking")
+        sys.stderr.write("Bad X.509 format found, unable to parse. Fp (if passed in) is %s \n" % args.fingerprint)
     else:
         cert = X509.load_cert_string(substrate)
         certparser.loadCert(cert, args.fingerprint, args.root)
         certparser.loadToMySQL()
-        #a = parser.prepareDictForMySQL()
-        #for f,v in a.iteritems():
-        #    print "%s: %s" % (f, v)
-
-        #print "************CERT***********"
-        #print cert
-
-        #print '*** %s PEM cert(s) de/serialized' % certCnt

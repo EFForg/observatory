@@ -76,7 +76,7 @@ class CertificateParser(object):
         self.existing_fields = existing_fields
         self.loadCert(raw_der_cert, fingerprint)
 
-    def loadCert(self, cert, fingerprint):
+    def loadCert(self, cert, fingerprint, root=False):
         if not cert:
             return
         self.raw_der_cert = cert
@@ -87,12 +87,13 @@ class CertificateParser(object):
             # todo turn this toggle into command-line option
             #sys.stderr.write("Warning: missing fingerprint! relying on derived fp")
             #self.fingerprint = derived_fp
-            
         else:
             self.fingerprint = self.addZeroes(fingerprint.strip(), 72)
             # sanity check fp
             if derived_fp != self.fingerprint:
                 raise ValueError, "Fingerprint does not match. Derived fp is: %s. Given is %s" % (derived_fp, self.fingerprint)
+        # indicate this is a cert in a major trust root, i.e. mozilla, ms for now
+        self.root = root
 
     def executeQuery(self, q):
         #sys.stderr.write("Executing: %s" % q)
@@ -179,6 +180,7 @@ class CertificateParser(object):
         rsa = RSA.construct((n,e))
         pub = crypto.PublicKey(key=rsa)
 
+
         field_dict['Subject'] = cert.get_subject().as_text().decode('utf8')
         field_dict['Issuer'] = cert.get_issuer().as_text().decode('utf8')
         field_dict['Serial Number'] = cert.get_serial_number()
@@ -192,6 +194,10 @@ class CertificateParser(object):
             field_dict['Version'] = "Unknown - raw value: %s" % ver
         else:
             field_dict['Version'] = VERSION_DICT[ver]
+        if self.root:
+            field_dict['Root'] = 1
+        else:
+            field_dict['Root'] = 0
 
         c = crypto.Certificate(name=cert.get_subject().as_text().decode('utf8'),
                                pubkey=pub, 
@@ -242,6 +248,7 @@ if __name__ == '__main__':
     parser.add_argument('--fp', action='store', dest='fingerprint', default=None)
     parser.add_argument('--pem', action='store_true', dest='pem', default=False)
     parser.add_argument('--test', action='store_true', dest='test', default=False)
+    parser.add_argument('--root', action='store_true', dest='root', default=False)
     args = parser.parse_args()
 
     if args.test:
@@ -259,7 +266,7 @@ if __name__ == '__main__':
         sys.stderr.write("No substrate, breaking")
     else:
         cert = X509.load_cert_string(substrate)
-        certparser.loadCert(cert, args.fingerprint)
+        certparser.loadCert(cert, args.fingerprint, args.root)
         certparser.loadToMySQL()
         #a = parser.prepareDictForMySQL()
         #for f,v in a.iteritems():

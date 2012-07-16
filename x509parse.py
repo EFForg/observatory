@@ -67,7 +67,8 @@ def toColon(b):
     return a
 
 class CertificateParser(object):
-    def __init__(self, raw_der_cert, fingerprint=None, table_name=None, connect=dbconnect.dbconnect(), existing_fields=[], skipfpcheck=False):
+    def __init__(self, raw_der_cert, fingerprint=None, table_name=None, connect=dbconnect.dbconnect(), existing_fields=[], skipfpcheck=False,
+                 create_table=False):
         self.gdb, self.gdbc = connect
         if not table_name:
             self.table_name = TABLE_NAME
@@ -76,6 +77,7 @@ class CertificateParser(object):
         self.existing_fields = existing_fields
         self.loadCert(raw_der_cert, fingerprint)
         self.skipfpcheck = skipfpcheck
+        self.create_table = create_table
 
     def loadCert(self, cert, fingerprint, root=False):
         if not cert:
@@ -222,7 +224,8 @@ class CertificateParser(object):
         return field_dict
 
     def loadToMySQL(self):
-        self.createTableIfMissing()
+        if self.create_table:
+            self.createTableIfMissing()
         if not self.certFpNeeded():
             sys.stderr.write("Cert already exists in db with fp %s\n" % self.fingerprint)
             return
@@ -246,12 +249,13 @@ if __name__ == '__main__':
     parser.add_argument('--test', action='store_true', dest='test', default=False)
     parser.add_argument('--root', action='store_true', dest='root', default=False)
     parser.add_argument('--skip-fp-check', action='store_true', dest='skip_fp_check', default=False)
+    parser.add_argument('--create', action='store_true', dest='create_table', default=False)
     args = parser.parse_args()
 
     if args.test:
         certparser = CertificateParser(None, args.fingerprint, args.table, dbconnect.dbconnecttest(), skipfpcheck=args.skip_fp_check)
     else:
-        certparser = CertificateParser(None, args.fingerprint, args.table, skipfpcheck=args.skip_fp_check)
+        certparser = CertificateParser(None, args.fingerprint, args.table, skipfpcheck=args.skip_fp_check, create_table=args.create_table)
 
     if args.pem:
         substrate = readPemFromFile(sys.stdin)

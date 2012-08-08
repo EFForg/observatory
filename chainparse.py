@@ -5,8 +5,8 @@ import openssl_dump
 import dbconnect
 
 # ugly hack
-TRANSVALID_PATH = './allvalidcacerts'
-TRANSVALID_VERIFY_ARGS = ['openssl', 'verify', '-CApath', TRANSVALID_PATH]
+TRANSVALID_PATH = './allvalidcacerts/'
+TRANSVALID_VERIFY_ARGS = ['openssl', 'verify', '-verbose', '-CApath', TRANSVALID_PATH]
 
 def readPemChainFromFile(fileObj):
     final = []
@@ -23,11 +23,14 @@ def readPemChainFromFile(fileObj):
                 continue
         if len(certLine) > 65:
             j = 0
-            newcertline = ""
+            newcertline = ''
             while (j*64 < len(certLine)):
-                newcertline += certLine[j*64:(j+1)*64] + "\n"
+                if certLine[j*64:(j+1)*64]:
+                    newcertline += certLine[j*64:(j+1)*64] + '\n'
                 j += 1
-            certLine = newcertline.replace('\n\n', '\n')
+            while (newcertline.find('\n\n') >= 0):
+                certLine = newcertline.replace('\n\n', '\n')
+                newcertline = certLine
         substrate += certLine
         if certLine.startswith('-----END CERTIFICATE--'):
             final.append(substrate)
@@ -35,9 +38,9 @@ def readPemChainFromFile(fileObj):
     return final
 
 def checkChain(chain):
-    verify_moz = openssl_dump.verifyOneCert(chain[0], chain[1:], openssl_dump.MOZ_VERIFY_ARGS, [])
-    verify_ms = openssl_dump.verifyOneCert(chain[0], chain[1:], openssl_dump.MS_VERIFY_ARGS, [])
-    verify_transvalid = openssl_dump.verifyOneCert(chain[0], chain[1:],TRANSVALID_VERIFY_ARGS, [])
+    verify_moz = openssl_dump.verifyOneCert(chain[0], chain[1:], openssl_dump.MOZ_VERIFY_ARGS, [], verbose=False)
+    verify_ms = openssl_dump.verifyOneCert(chain[0], chain[1:], openssl_dump.MS_VERIFY_ARGS, [], verbose=False)
+    verify_transvalid = openssl_dump.verifyOneCert(chain[0], chain[1:],TRANSVALID_VERIFY_ARGS, [], verbose=False)
     # oh boy using stdout to communicate with php is ugly...
     print verify_moz
     print verify_ms

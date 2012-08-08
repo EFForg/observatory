@@ -22,15 +22,15 @@ DER_ARGS = ['openssl', 'x509', '-fingerprint', '-inform', 'DER', '-noout', '-tex
 
 # would be better to use a relative path to mozilla_CAs, but we don't know how
 # to get there...
-moz_trusted_ca_path = ['/tmp/cas','/home/jesse/sslscanner/mozilla_CAs',
-                       'mozilla_CAs','./mozilla_CAs/',
+moz_trusted_ca_path = ['./mozilla_CAs/','/tmp/cas','/home/jesse/sslscanner/mozilla_CAs',
+                       'mozilla_CAs',
                        'observatory/mozilla_CAs']
-ms_trusted_ca_path = ['/home/pde/sslscanner/microsoft_CAs',
+ms_trusted_ca_path = ['./microsoft_CAs/','/home/pde/sslscanner/microsoft_CAs',
                       '/home/pde/eff/ssl/survey/scanner3/microsoft_CAs',
-                      './microsoft_CAs/', 'observatory/microsoft_CAs']
-all_trusted_ca_path = ['/home/pde/sslscanner/allcerts',
+                       'observatory/microsoft_CAs']
+all_trusted_ca_path = ['./allcerts/','/home/pde/sslscanner/allcerts',
                       '/home/pde/eff/ssl/survey/scanner3/allcerts',
-                      './allcerts/', 'observatory/allcerts']
+                       'observatory/allcerts']
 
 moz_ca_store = filter(os.path.isdir, moz_trusted_ca_path)[0]
 #print "moz_ca_store is %s" % moz_ca_store
@@ -85,12 +85,16 @@ def verifyOneCert(cert, rest_of_chain, cmd, extra_args, retries=3, verbose=False
     os.fsync(tmp)
     cmdline += ["-untrusted", tmp_path]
   try:
-    if verbose: print cmdline
+    if verbose: 
+      sys.stderr.write("openssl command is: %s\n" % cmdline)
+      if rest_of_chain:
+        ftmp = open(tmp_path, 'r')
+        sys.stderr.write(ftmp.read())
     proc = subprocess.Popen(cmdline, stdin=PIPE, stdout=PIPE)
     std_out, std_err = proc.communicate(cert)
   except:
     if retries == 0:
-      print "Catastrophic failure to verify\n" + "".join([cert] + rest_of_chain)
+      sys.stderr.write("Catastrophic failure to verify\n" + "".join([cert] + rest_of_chain))
       exit(1)
     return verifyOneCert(cert, rest_of_chain, cmd, extra_args, retries -1)
   finally:

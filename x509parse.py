@@ -9,6 +9,7 @@ import crypto_utils
 import dbconnect
 import MySQLdb
 import _mysql_exceptions
+import re
 
 
 X509V3_EXT_ERROR_UNKNOWN = (1L << 16)
@@ -67,8 +68,7 @@ def toColon(b):
     return a
 
 class CertificateParser(object):
-    def __init__(self, raw_der_cert, fingerprint=None, table_name=None, connect=dbconnect.dbconnect(), existing_fields=[], skipfpcheck=False,
-                 create_table=False):
+    def __init__(self, raw_der_cert, fingerprint=None, table_name=None, connect=dbconnect.dbconnect(), existing_fields=[], skipfpcheck=False, create_table=False):
         self.gdb, self.gdbc = connect
         if not table_name:
             self.table_name = TABLE_NAME
@@ -78,6 +78,7 @@ class CertificateParser(object):
         self.loadCert(raw_der_cert, fingerprint)
         self.skipfpcheck = skipfpcheck
         self.create_table = create_table
+        self.domainre = re.compile(r'^[a-zA-Z\d-]{,63}(\.[a-zA-Z\d-]{,63})*$')
 
     def loadCert(self, cert, fingerprint, root=False):
         if not cert:
@@ -150,7 +151,7 @@ class CertificateParser(object):
         # string escaping should have already happened but putting here for extra safety
         field_sql = ', '.join("`%s`='%s'" % (self.gdb.escape_string(str(f)), self.gdb.escape_string(str(v))) for  f,v in field_dict.iteritems())
         cert_fp_field = "cert_fp=unhex('%s')" % self.fingerprint
-        q = "INSERT IGNORE INTO %s SET %s" % (table, field_sql+", "+cert_fp_field)
+        q = "REPLACE INTO %s SET %s" % (table, field_sql+", "+cert_fp_field)
         self.executeQuery(q)
 
     def certFpNeeded(self):
@@ -226,7 +227,11 @@ class CertificateParser(object):
                 field_dict[dkey] += " [AND ADDITONAL X509 EXTENSION ENTRY WITH THIS NAME IN CERT] %s" % dval
             else:
                 field_dict[dkey] = dval
+        self.loadNamesToMySQL(names)
         return field_dict
+
+    def validateDomain(self, domain):
+        return self.domainre.match(domain)
 
     def parseSAN(self, subject_alt_names):
         domain_list = []
@@ -250,14 +255,15 @@ class CertificateParser(object):
 
     def loadNamesToMySQL(self, names):
         """Args: names: [name1, name2, etc]"""
-        # tododta validate that it is a real domain name
         for name in names:
-            self.loadEntry({'name':name}, table='names')
+            name = name.lower()
+            if self.validateDomain(name):
+                self.loadEntry({'name':name}, table='names')
 
-    def loadToMySQL(self):
+    def loadToMySQL(self, overwrite=False):
         if self.create_table:
             self.createTableIfMissing()
-        if not self.certFpNeeded():
+        if not overwrite and not self.certFpNeeded():
             sys.stderr.write("Cert already exists in db with fp %s\n" % self.fingerprint)
             return
         dict_to_load = self.prepareDictForMySQL()
@@ -280,6 +286,7 @@ if __name__ == '__main__':
     parser.add_argument('--test', action='store_true', dest='test', default=False)
     parser.add_argument('--root', action='store_true', dest='root', default=False)
     parser.add_argument('--skip-fp-check', action='store_true', dest='skip_fp_check', default=False)
+    parser.add_argument('--overwrite', action='store_true', dest='overwrite', default=False)
     parser.add_argument('--create', action='store_true', dest='create_table', default=False)
     args = parser.parse_args()
 
@@ -297,4 +304,4 @@ if __name__ == '__main__':
     else:
         cert = X509.load_cert_string(substrate)
         certparser.loadCert(cert, args.fingerprint, args.root)
-        certparser.loadToMySQL()
+        certparser.loadToMySQL(overwrite=args.overwrite)

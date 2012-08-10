@@ -146,11 +146,11 @@ class CertificateParser(object):
                 self.addField(dkey)
                 self.existing_fields.append(dkey)
 
-    def loadEntry(self, field_dict):
+    def loadEntry(self, field_dict, table):
         # string escaping should have already happened but putting here for extra safety
         field_sql = ', '.join("`%s`='%s'" % (self.gdb.escape_string(str(f)), self.gdb.escape_string(str(v))) for  f,v in field_dict.iteritems())
         cert_fp_field = "cert_fp=unhex('%s')" % self.fingerprint
-        q = "INSERT IGNORE INTO %s SET %s" % (self.table_name, field_sql+", "+cert_fp_field)
+        q = "INSERT IGNORE INTO %s SET %s" % (table, field_sql+", "+cert_fp_field)
         self.executeQuery(q)
 
     def certFpNeeded(self):
@@ -180,8 +180,11 @@ class CertificateParser(object):
         rsa = RSA.construct((n,e))
         pub = crypto.PublicKey(key=rsa)
 
+        # tracks names that will be loaded to the names table
+        names = []
 
         field_dict['Subject'] = cert.get_subject().as_text().decode('utf8')
+        names += self.parseSubject(field_dict['Subject'])
         field_dict['Issuer'] = cert.get_issuer().as_text().decode('utf8')
         field_dict['Serial Number'] = cert.get_serial_number()
         field_dict['Validity:Not Before'] = notBefore=cert.get_not_before().get_datetime()
@@ -216,12 +219,40 @@ class CertificateParser(object):
                 critical = "Critical: "
             dkey = self.gdb.escape_string('X509v3 extensions: %s%s' % (critical, eid))
             dval = self.gdb.escape_string(ev.strip().replace('\n', ''))
+            if dkey == 'subjectAltName':
+                names += self.parseSAN(dval)
             if dkey in field_dict:
                 sys.stderr.write('Warning: multiple X.509 extensions with name %s\n' % dkey)
                 field_dict[dkey] += " [AND ADDITONAL X509 EXTENSION ENTRY WITH THIS NAME IN CERT] %s" % dval
             else:
                 field_dict[dkey] = dval
         return field_dict
+
+    def parseSAN(self, subject_alt_names):
+        domain_list = []
+        entries = subject_alt_names.split(', ')
+        for a in entries:
+            split_entry = a.split(':')
+            if split_entry[0] != 'DNS' or len(split_entry) != 2:
+                continue
+            domain_list.append(split_entry[1])
+        return domain_list
+
+    def parseSubject(self, subject):
+        domain_list = []
+        entries = subject.split(', ')
+        for a in entries:
+            split_entry = a.split('=')
+            if split_entry[0] != 'CN' or len(split_entry) != 2:
+                continue
+            domain_list.append(split_entry[1])
+        return domain_list
+
+    def loadNamesToMySQL(self, names):
+        """Args: names: [name1, name2, etc]"""
+        # tododta validate that it is a real domain name
+        for name in names:
+            self.loadEntry({'name':name}, table='names')
 
     def loadToMySQL(self):
         if self.create_table:
@@ -234,7 +265,7 @@ class CertificateParser(object):
             sys.stderr.write("Unable to load certificate with fp %s \n" % self.fingerprint)
             return
         self.addMissingFields(dict_to_load)
-        self.loadEntry(dict_to_load)
+        self.loadEntry(dict_to_load, self.table_name)
 
 # Read ASN.1/PEM X.509 certificates on stdin, parse each into plain text,
 # then build substrate from it

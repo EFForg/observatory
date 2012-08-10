@@ -78,7 +78,7 @@ class CertificateParser(object):
         self.loadCert(raw_der_cert, fingerprint)
         self.skipfpcheck = skipfpcheck
         self.create_table = create_table
-        self.domainre = re.compile(r'^[a-zA-Z\d-]{,63}(\.[a-zA-Z\d-]{,63})*$')
+        self.domainre = re.compile(r'^[a-zA-Z\*\d-]{,63}(\.[a-zA-Z\*\d-]{,63})*$')
 
     def loadCert(self, cert, fingerprint, root=False):
         if not cert:

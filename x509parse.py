@@ -68,14 +68,15 @@ def toColon(b):
     return a
 
 class CertificateParser(object):
-    def __init__(self, raw_der_cert, fingerprint=None, table_name=None, connect=dbconnect.dbconnect(), existing_fields=[], skipfpcheck=False, create_table=False):
+    def __init__(self, raw_der_cert=None, fingerprint=None, table_name=None, connect=dbconnect.dbconnect(), existing_fields=[], skipfpcheck=False, create_table=False):
         self.gdb, self.gdbc = connect
         if not table_name:
             self.table_name = TABLE_NAME
         else:
             self.table_name = table_name
         self.existing_fields = existing_fields
-        self.loadCert(raw_der_cert, fingerprint)
+        if raw_der_cert:
+            self.loadCert(raw_der_cert, fingerprint)
         self.skipfpcheck = skipfpcheck
         self.create_table = create_table
         self.domainre = re.compile(r'^[a-zA-Z\*\d-]{,63}(\.[a-zA-Z\*\d-]{,63})*$')
